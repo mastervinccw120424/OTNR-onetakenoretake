@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIP Access - Specialization Review</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .vip-card {
+            background: var(--dark-card);
+            backdrop-filter: blur(20px);
+            border: 2px solid var(--primary);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(168, 85, 247, 0.2);
+            animation: slideInUp 0.6s ease-out;
+            position: relative;
+        }
+        .price-tag { margin: 30px 0; }
+        .old-price {
+            text-decoration: line-through;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .new-price {
+            color: #ffd700;
+            font-size: 3.5rem;
+            font-weight: 800;
+            display: block;
+        }
+        .discount-badge {
+            background: var(--danger);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .vip-features { text-align: left; margin: 30px 0; list-style: none; }
+        .vip-features li {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-muted);
+        }
+        .vip-features i { color: var(--success); }
+    </style>
+</head>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;">
+    <div class="vip-card">
+        <button class="btn-back" onclick="window.location.href='index.html'" style="position: absolute; top: 20px; left: 20px;">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="course-icon" style="font-size: 4rem; margin-bottom: 10px;">💎</div>
+        <h2 style="font-size: 2rem; margin-bottom: 10px;">Unlock Your Specialization</h2>
+        <p style="color: var(--text-muted);">Gain full access to high-yield review materials tailored for your major.</p>
+
+        <div class="price-tag">
+            <span class="old-price">Regular Price: ₱198.00</span>
+            <span class="new-price">₱99.00</span>
+            <span class="discount-badge">⚡ 50% OFF - LIMITED TIME OFFER</span>
+        </div>
+
+        <ul class="vip-features">
+            <li><i class="fas fa-check-circle"></i> Full Lifetime Access</li>
+            <li><i class="fas fa-check-circle"></i> Specialized Quiz Modules</li>
+            <li><i class="fas fa-check-circle"></i> 100 items Quiz With Review</li>
+            <li><i class="fas fa-check-circle"></i> One-time Payment only</li>
+        </ul>
+
+        <button class="btn-submit" onclick="contactForVIP()" style="background: linear-gradient(135deg, #ffd700, #ffa500); color: #000; font-weight: 800; border: none;">
+            GET VIP ACCESS NOW
+        </button>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 20px;">Secure your future today. One take, no retake!</p>
+    </div>
+    <script>
+        function contactForVIP() {
+            const adminEmail = 'yourmaster.vince@gmail.com';
+            const subject = encodeURIComponent('VIP ACCESS INQUIRY - One Take No Retake');
+            const body = encodeURIComponent('Hello Admin,\n\nI would like to avail the VIP Lifetime Access for 99 Pesos. Please provide payment instructions.\n\nThank you!');
+            window.location.href = `mailto:${adminEmail}?subject=${subject}&body=${body}`;
+        }
+    </script>
+</body>
+</html>

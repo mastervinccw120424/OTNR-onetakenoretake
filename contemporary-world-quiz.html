@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashReview - Contemporary World</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Quiz Page -->
+    <div id="quizPage" class="page active" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="dashboard-header" style="width: 100%; max-width: 800px; margin-bottom: 20px;">
+            <button class="btn-back" onclick="window.location.href='index.html'">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 style="font-size: 1.2rem; color: var(--text-muted);">Contemporary World</h2>
+            <div class="quiz-timer" id="quizTimer">60s</div>
+            <div id="quizProgress" style="font-weight: 700; background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 15px;">1 / 50</div>
+        </div>
+
+        <div class="quiz-container">
+            <div class="quiz-question-box">
+                <h3 id="questionText">Loading question...</h3>
+            </div>
+
+            <div class="quiz-options" id="quizOptions">
+                <!-- Options inserted here -->
+            </div>
+
+            <div id="explanationBox" class="explanation-box" style="display: none;">
+                <strong id="feedbackTitle">Correct!</strong>
+                <p id="explanationText">Explanation goes here...</p>
+            </div>
+
+            <button id="nextBtn" class="btn-submit" style="display: none; margin-top: 10px;" onclick="nextQuestion()">
+                Next Question <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quiz Result Page -->
+    <div id="quizResultPage" class="page" style="display: flex; align-items: center; justify-content: center;">
+        <div class="result-container text-center">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <h2 id="resultTitle">FlashReview Completed!</h2>
+            <p class="result-score">Your Score: <span id="finalScore">0</span> / 50</p>
+            <div id="resultFeedback" class="mb-20">Great job! Keep reviewing.</div>
+            
+            <div class="topic-actions">
+                <button class="btn-action" onclick="window.location.href='index.html'">
+                    <i class="fas fa-home"></i> Home
+                </button>
+                <button class="btn-action secondary" onclick="location.reload()">
+                    <i class="fas fa-redo"></i> Restart FlashReview
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "What is the term for the increasing interdependence of the world's economies, cultures, and populations?", options: ["Colonization", "Globalization", "Isolationism", "Regionalization"], correct: 1, exp: "Globalization describes the \"shrinking\" of the world through increased interaction." },
+            { q: "Which international organization was established after WWII to maintain international peace and security?", options: ["World Bank", "International Monetary Fund (IMF)", "United Nations (UN)", "World Trade Organization (WTO)"], correct: 2, exp: "The UN serves as the primary forum for global diplomacy." },
+            { q: "In the \"Global North-South Divide,\" the \"Global North\" generally refers to:", options: ["Countries located only in the Northern Hemisphere.", "Wealthy, industrialized, and technologically advanced nations.", "Developing nations with agricultural economies.", "Countries that were never colonized."], correct: 1, exp: "The \"North\" is a socio-economic distinction, not just a geographical one." },
+            { q: "What is the primary role of the World Trade Organization (WTO)?", options: ["To provide emergency loans to countries in debt.", "To regulate international trade and settle trade disputes between nations.", "To provide vaccinations to children in poverty.", "To command the military forces of the world."], correct: 1, exp: "The WTO ensures that trade flows as smoothly and predictably as possible." },
+            { q: "\"Cultural Imperialism\" refers to:", options: ["The equal exchange of culture between two nations.", "The imposition of a dominant culture (usually Western) over other cultures.", "The preservation of indigenous traditions.", "The study of ancient civilizations."], correct: 1, exp: "It often manifests through the global spread of American media, food, and language." },
+            { q: "Which term describes a state that possesses a monopoly on the legitimate use of physical force within a territory?", options: ["Nation", "Nation-State", "Global Village", "Civil Society"], correct: 1, exp: "The nation-state is the primary political unit in the contemporary world." },
+            { q: "The \"Global South\" is often characterized by:", options: ["High levels of industrialization.", "A history of colonization and ongoing struggles with poverty.", "Control over global financial institutions.", "High GDP per capita."], correct: 1, exp: "Most countries in the Global South are developing or newly industrialized." },
+            { q: "What is \"Sustainable Development\"?", options: ["Rapid industrial growth regardless of nature.", "Development that meets the needs of the present without compromising the future.", "Stopping all technological progress to save trees.", "Moving the entire population to urban centers."], correct: 1, exp: "This is the guiding principle for global environmental policy." },
+            { q: "Which phenomenon refers to the mass movement of people from rural areas to cities?", options: ["Migration", "Urbanization", "Emigration", "Diaspora"], correct: 1, exp: "Urbanization is a key feature of the modern, globalized world." },
+            { q: "What is the \"Digital Divide\" in the contemporary world?", options: ["The difference between analog and digital clocks.", "The gap in access to information and communication technologies between different regions.", "A new type of social media platform.", "The process of coding software."], correct: 1, exp: "It highlights the inequality in technological access between the North and South." },
+            { q: "The \"Bretton Woods System\" led to the creation of which two major institutions?", options: ["The UN and NATO", "The IMF and the World Bank", "The EU and ASEAN", "Google and Apple"], correct: 1, exp: "Established in 1944 to manage the post-war global economy." },
+            { q: "What does \"Offshoring\" mean in a globalized economy?", options: ["Traveling to a different country for a vacation.", "Moving a business process or facility to another country to reduce costs.", "Protecting local businesses from foreign competition.", "Buying goods only from local farmers."], correct: 1, exp: "Common in manufacturing and IT services/BPO." },
+            { q: "Which regional organization aims to promote economic growth and regional stability in Southeast Asia?", options: ["European Union (EU)", "African Union (AU)", "Association of Southeast Asian Nations (ASEAN)", "NAFTA"], correct: 2, exp: "ASEAN is the primary regional bloc for the Philippines." },
+            { q: " \"Global Media Cultures\" primarily influence society by:", options: ["Forcing everyone to speak only one language.", "Shaping perceptions, values, and identities through information flow.", "Eliminating the need for local news.", "Increasing the price of television sets."], correct: 1, exp: "Media acts as a bridge for cultural globalization." },
+            { q: "What is the significance of the \"Treaty of Westphalia\" (1648) to the contemporary world?", options: ["It started the first world war.", "It established the concept of state sovereignty.", "It created the first global currency.", "It ended the era of globalization."], correct: 1, exp: "It laid the foundation for the modern system of independent states." },
+            { q: "Which of the following describes the \"Global Interstate System\"?", options: ["A system where one country rules the entire world.", "The set of formal and informal institutions that govern relations between sovereign states.", "A network of highways connecting different continents.", "The internal governing body of a single nation."], correct: 1, exp: "Since there is no \"world government,\" the interstate system relies on treaties, diplomacy, and international law to maintain order among sovereign nations." },
+            { q: "What is the main objective of the International Monetary Fund (IMF)?", options: ["To provide long-term loans for infrastructure projects.", "To ensure the stability of the international monetary system and provide short-term loans during financial crises.", "To protect the environment from industrial pollution.", "To promote world peace through cultural exchange."], correct: 1, exp: "While the World Bank focuses on long-term development, the IMF acts as a \"lender of last resort\" to prevent global economic collapse." },
+            { q: "\"Economic Globalization\" is characterized by:", options: ["The restriction of trade to local markets only.", "The widespread movement of goods, capital, services, and technology across international borders.", "The complete elimination of all national currencies.", "Governments taking total control of all private businesses."], correct: 1, exp: "It involves the integration of national economies into the international economy through trade, foreign direct investment, and capital flows." },
+            { q: "Which term refers to the dispersal of a population from their original homeland to various parts of the world?", options: ["Urbanization", "Diaspora", "Decolonization", "Assimilation"], correct: 1, exp: "Diaspora (e.g., the Jewish diaspora or the Global Filipino diaspora) involves people maintaining a connection to their homeland while living abroad." },
+            { q: "In Wallerstein’s World Systems Theory, \"Core\" countries are those that:", options: ["Provide raw materials and cheap labor.", "Are technologically advanced, industrialized, and control global wealth.", "Are completely isolated from global trade.", "Are located only in the Southern Hemisphere."], correct: 1, exp: "Core nations (like the US or Japan) dominate and exploit the peripheral nations for labor and raw materials." },
+            { q: "What is \"Global Governance\"?", options: ["A single government that dictates laws to every person on Earth.", "The movement toward political cooperation among transnational actors to solve global problems.", "The military takeover of small countries by large ones.", "The management of a local city council."], correct: 1, exp: "Because there is no world king or president, global governance happens through the UN, NGOs, and international treaties." },
+            { q: "Which phenomenon describes the blend of global and local cultures, where a global product is adapted to suit local tastes?", options: ["Westernization", "Glocalization", "Homogenization", "Isolationism"], correct: 1, exp: "Glocalization is seen when McDonald's serves \"McSpaghetti\" in the Philippines—adapting a global brand to local cultural preferences." },
+            { q: "The \"Neoliberal\" approach to globalization emphasizes:", options: ["High taxes and heavy government regulation of the economy.", "Free markets, privatization, and the reduction of government spending on social services.", "The abolition of private property.", "Restricting all international trade to protect local farmers."], correct: 1, exp: "Neoliberalism believes that the market is the most efficient way to organize the economy and that trade barriers should be removed." },
+            { q: "What is \"Human Security\" as defined by the UN?", options: ["Protecting a state's borders from foreign invasion.", "Protecting individuals from threats to their well-being, such as hunger, disease, and repression.", "The number of police officers in a city.", "The strength of a nation’s nuclear arsenal."], correct: 1, exp: "Human Security shifts the focus from the security of the \"state\" to the security of the \"people.\"" },
+            { q: "\"Demographic Transition\" refers to the transition from:", options: ["High birth and death rates to low birth and death rates as a country develops.", "Rural living to urban living.", "Democracy to dictatorship.", "Using paper money to using digital currency."], correct: 0, exp: "As nations industrialize and healthcare improves, birth and death rates typically fall, changing the population structure." },
+            { q: "Which of the following is a \"Pull Factor\" in international migration?", options: ["War and conflict in the home country.", "Better job opportunities and higher wages in the destination country.", "Natural disasters and famine.", "Religious persecution."], correct: 1, exp: "Pull factors are positive conditions that attract people to a new location, while push factors are negative conditions that drive them away." },
+            { q: "What is \"Global Liquidity\"?", options: ["The amount of water available globally.", "The ease with which capital and information can flow across borders.", "The melting of polar ice caps due to global warming.", "The total amount of gold held by the IMF."], correct: 1, exp: "In a globalized world, things are \"liquid\" when they move easily and quickly without being stuck in one place." },
+            { q: "The \"International Criminal Court\" (ICC) was established to:", options: ["Settle trade disputes between companies.", "Prosecute individuals for genocide, war crimes, and crimes against humanity.", "Regulate the global price of oil.", "Manage the internet and prevent cybercrimes."], correct: 1, exp: "The ICC is a court of last resort for the world’s most serious crimes when national courts are unwilling or unable to act." },
+            { q: "What is \"Hyperglobalism\"?", options: ["The belief that globalization is a myth and hasn't changed anything.", "The view that globalization is bringing about the end of the nation-state as the main political unit.", "The fear of using new technology.", "The study of local tribal traditions."], correct: 1, exp: "Hyperglobalists argue that global markets are now more powerful than individual governments." },
+            { q: "Which term refers to the feeling of belonging to a world community rather than just a specific nation?", options: ["Nationalism", "Global Citizenship", "Patriotism", "Xenocentrism"], correct: 1, exp: "Global citizenship suggests that our identities and responsibilities extend beyond national borders." },
+            { q: "The \"Resource Curse\" (Paradox of Plenty) refers to:", options: ["Countries with no natural resources becoming very wealthy.", "Countries with an abundance of natural resources experiencing less economic growth and worse development outcomes.", "The high cost of buying oil and gas.", "The destruction of forests for farming."], correct: 1, exp: "Nations rich in oil or minerals often suffer from corruption, conflict, and a lack of economic diversity." },
+            { q: "What is \"Market Globalism\"?", options: ["The belief that democracy should be spread by force.", "The claim that globalization is about the liberalization and global integration of markets for the benefit of everyone.", "The rejection of all global trade.", "A system where prices are fixed by the government."], correct: 1, exp: "This is the dominant ideology that justifies globalization through the lens of free-market capitalism." },
+            { q: "\"Global Civil Society\" consists of:", options: ["Government officials and military leaders.", "Non-governmental organizations (NGOs), activists, and social movements that operate across borders.", "Only the CEOs of multinational corporations.", "People who live in rural villages."], correct: 1, exp: "Groups like Greenpeace or Amnesty International represent Global Civil Society, working outside the government to influence global issues." },
+            { q: "Which agreement is the primary global effort to combat climate change by limiting global warming?", options: ["The Treaty of Versailles", "The Paris Agreement", "The Geneva Convention", "The Washington Consensus"], correct: 1, exp: "Adopted in 2015, it aims to keep the global temperature rise well below 2°C." },
+            { q: "What is \"Food Security\"?", options: ["Locking up food so it cannot be stolen.", "When all people at all times have physical and economic access to sufficient, safe, and nutritious food.", "Producing food only for export to other countries.", "The use of pesticides in farming."], correct: 1, exp: "Globalized food chains can both help and hurt food security depending on price stability and distribution." },
+            { q: "The term \"Global City\" (e.g., New York, London, Tokyo) refers to a city that:", options: ["Has the largest population in the world.", "Serves as a primary node in the global economic network, hosting major financial and corporate headquarters.", "Is located exactly in the center of a continent.", "Has no local government."], correct: 1, exp: "Global cities are the \"command centers\" of the global economy." },
+            { q: "\"Multinational Corporations\" (MNCs) are companies that:", options: ["Buy goods from only one country.", "Have operations, production, or service facilities in more than one country.", "Are owned by the United Nations.", "Only hire workers from their home country."], correct: 1, exp: "MNCs are the primary drivers of economic globalization (e.g., Samsung, Toyota, Nike)." },
+            { q: "What is \"Transnationalism\"?", options: ["Moving a capital city to a new location.", "Social, economic, or political processes that transcend national boundaries.", "The belief that one's nation is better than others.", "The study of national transportation systems."], correct: 1, exp: "It describes ties (like family or business) that connect people across different nations simultaneously." },
+            { q: "The \"Great Recession\" of 2008 demonstrated:", options: ["That globalization has no impact on local economies.", "The deep interconnectedness and vulnerability of the global financial system.", "That the US economy is completely independent.", "That gold is no longer valuable."], correct: 1, exp: "A crisis that started in the US housing market quickly spread to the entire world, showing how linked we all are." },
+            { q: "What is \"Cultural Hybridity\"?", options: ["The destruction of one culture by another.", "The emergence of new cultural forms from the mixing of different cultures.", "The refusal to learn a second language.", "Keeping different cultures strictly separated."], correct: 1, exp: "It is the \"creolization\" or mixing of cultures, resulting in something entirely new (e.g., K-Pop blending Western pop and Korean culture)." },
+            { q: "Which international body provides \"peacekeeping\" forces to conflict zones?", options: ["The WTO", "The United Nations Security Council", "The IMF", "ASEAN"], correct: 1, exp: "The UN Security Council authorizes \"Blue Helmets\" to maintain ceasefires and protect civilians." },
+            { q: "\"Fair Trade\" is an alternative to \"Free Trade\" that focuses on:", options: ["Removing all taxes on imports.", "Ensuring better prices, decent working conditions, and fair terms of trade for farmers and workers in the Global South.", "Trading only between wealthy nations.", "Using robots instead of human labor."], correct: 1, exp: "Fair Trade attempts to fix the inequalities inherent in traditional global trade models." },
+            { q: "What is \"Sovereignty\" in the contemporary world?", options: ["The right of one country to invade another.", "The authority of a state to govern itself without outside interference.", "A system where the church rules the state.", "The process of a country going bankrupt."], correct: 1, exp: "Globalization challenges sovereignty because international laws and global markets often influence what a country can do." },
+            { q: "\"The Bottom Billion\" refers to:", options: ["The poorest billion people in the world who are falling behind the rest of humanity.", "The richest billion people who control all assets.", "The population of the Global North.", "The number of people who use the internet."], correct: 0, exp: "Coined by Paul Collier, it refers to people in countries trapped in poverty despite global progress." },
+            { q: "What is the role of the \"World Bank\"?", options: ["To keep the world's gold safe.", "To provide long-term financial assistance and grants to developing countries for development projects.", "To print the \"Global Dollar.\"", "To monitor the elections of every country."], correct: 1, exp: "It focuses on poverty reduction and building infrastructure in the Global South." },
+            { q: "\"Global Health\" issues (like COVID-19) are considered global because:", options: ["They only affect people who travel by plane.", "They bypass national borders and require international cooperation to solve.", "They are caused by the internet.", "They only happen in the Global North."], correct: 1, exp: "Diseases don't carry passports; a health crisis in one country is a threat to all." },
+            { q: "What is \"Brain Drain\"?", options: ["Losing your memory due to old age.", "The emigration of highly trained or intelligent people from a particular country (usually from the South to the North).", "A new type of computer virus.", "The process of studying too much."], correct: 1, exp: "This is a major issue for developing nations that lose their doctors and engineers to wealthier countries." },
+            { q: "\"Regionalism\" (like the EU or ASEAN) is often a response to globalization because it:", options: ["Allows countries to isolate themselves completely.", "Helps small or medium-sized countries gain more power and stability by working together.", "Requires all countries to speak the same language.", "Prevents any trade with countries outside the region."], correct: 1, exp: "By forming a \"bloc,\" nations can better negotiate in the global market." },
+            { q: "What is \"Global Inequality\"?", options: ["When everyone in the world has the same amount of money.", "The systematic differences in wealth and power between countries and between people within those countries.", "A type of mathematical equation.", "The belief that all cultures are the same."], correct: 1, exp: "Globalization has created immense wealth, but it is not distributed equally across the globe." },
+            { q: "The \"Information Age\" is a driver of globalization because:", options: ["People no longer need to talk to each other.", "It allows for the near-instantaneous flow of information and ideas across the planet.", "It makes paper books more expensive.", "It prevents people from traveling."], correct: 1, exp: "The internet and digital technology are the \"infrastructure\" that makes modern globalization possible." }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 60;
+
+        function startQuiz() {
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById('quizProgress').innerText = `${currentIdx + 1} / ${questions.length}`;
+            document.getElementById('questionText').innerText = q.q;
+            
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = `${String.fromCharCode(65 + index)}. ${opt}`;
+                btn.onclick = () => selectOption(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('explanationBox').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timeLeft = 60;
+            document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    selectOption(-1); 
+                }
+            }, 1000);
+        }
+
+        function selectOption(index) {
+            clearInterval(timer);
+            const q = questions[currentIdx];
+            const options = document.querySelectorAll('.option-btn');
+            
+            options.forEach(btn => btn.disabled = true);
+            
+            if (index === q.correct) {
+                options[index].classList.add('correct');
+                score++;
+                document.getElementById('feedbackTitle').innerText = "Correct!";
+                document.getElementById('feedbackTitle').style.color = "#4CAF50";
+            } else {
+                if (index !== -1) options[index].classList.add('wrong');
+                options[q.correct].classList.add('correct');
+                document.getElementById('feedbackTitle').innerText = "Incorrect";
+                document.getElementById('feedbackTitle').style.color = "#f44336";
+            }
+            
+            document.getElementById('explanationText').innerText = q.exp;
+            document.getElementById('explanationBox').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentIdx++;
+            if (currentIdx < questions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quizPage').style.display = 'none';
+            document.getElementById('quizResultPage').classList.add('active');
+            document.getElementById('finalScore').innerText = score;
+            
+            const feedback = document.getElementById('resultFeedback');
+            if (score === questions.length) {
+                feedback.innerText = "Perfect Score! You're a Global Issues Expert!";
+            } else if (score >= (questions.length * 0.8)) {
+                feedback.innerText = "Excellent! You have a strong grasp of the Contemporary World.";
+            } else if (score >= (questions.length * 0.5)) {
+                feedback.innerText = "Good job! Review the explanations to master the topics.";
+            } else {
+                feedback.innerText = "Keep practicing! Understanding global dynamics is key.";
+            }
+        }
+
+        startQuiz();
+    </script>
+</body>
+</html>

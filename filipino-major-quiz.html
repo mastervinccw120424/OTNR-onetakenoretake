@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashReview - Filipino Majorship</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <!-- Quiz Page -->
+    <div id="quizPage" class="page active" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="dashboard-header" style="width: 100%; max-width: 800px; margin-bottom: 20px;">
+            <button class="btn-back" onclick="window.location.href='index.html'">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 style="font-size: 1.2rem; color: var(--text-muted);">Filipino Majorship Comprehensive</h2>
+            <div class="quiz-timer" id="quizTimer">60s</div>
+            <div id="quizProgress" style="font-weight: 700; background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 15px;"></div>
+        </div>
+
+        <div class="quiz-container">
+            <div class="quiz-question-box">
+                <h3 id="questionText">Loading question...</h3>
+            </div>
+
+            <div class="quiz-options" id="quizOptions">
+                <!-- Options inserted here -->
+            </div>
+
+            <div id="explanationBox" class="explanation-box" style="display: none;">
+                <strong id="feedbackTitle">Tama!</strong>
+                <p id="explanationText">Explanation goes here...</p>
+            </div>
+
+            <button id="nextBtn" class="btn-submit" style="display: none; margin-top: 10px;" onclick="nextQuestion()">
+                Susunod na Tanong <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quiz Result Page -->
+    <div id="quizResultPage" class="page" style="display: flex; align-items: center; justify-content: center;">
+        <div class="result-container text-center">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <h2 id="resultTitle">Tapos na ang FlashReview!</h2>
+            <p class="result-score">Iyong Iskor: <span id="finalScore">0</span> / <span id="totalQuestions">0</span></p>
+            <div id="resultFeedback" class="mb-20">Mahusay! Ipagpatuloy ang pag-aaral.</div>
+            
+            <div class="topic-actions">
+                <button class="btn-action" onclick="window.location.href='index.html'">
+                    <i class="fas fa-home"></i> Home
+                </button>
+                <button class="btn-action secondary" onclick="location.reload()">
+                    <i class="fas fa-redo"></i> Ulitin ang FlashReview
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        let currentUser = null;
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                currentUser = {
+                    uid: user.uid,
+                    name: user.displayName || user.email.split('@')[0],
+                    major: 'Filipino'
+                };
+            } else { window.location.href = 'index.html'; }
+        });
+
+        async function saveResult(score, total, timeSpent) {
+            if (!currentUser) return;
+            try {
+                const userRef = db.collection('leaderboard').doc(currentUser.uid);
+                await userRef.set({
+                    name: currentUser.name,
+                    major: currentUser.major,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+                    totalTimeUsed: firebase.firestore.FieldValue.increment(timeSpent)
+                }, { merge: true });
+            } catch (e) { console.error(e); }
+        }
+
+        const questions = [
+            { q: "Ano ang tawag sa makaagham na pag-aaral ng mga makabuluhang tunog ng isang wika?", options: ["Morpolohiya", "Ponolohiya", "Sintaksis", "Semantika"], correct: 1, exp: "Ang ponolohiya ay ang pag-aaral ng mga tunog o ponema ng wika." },
+            { q: "Sa salitang 'magdinuguan', ang salitang-ugat ay 'dugo'. Ano ang tawag sa pagbabagong morpoponemiko kung saan ang /o/ ay naging /u/?", options: ["Asimilasyon", "Metatesis", "Pagpapalit ng Ponema", "Paglilipat-diwa"], correct: 2, exp: "Nagaganap ang pagpapalit ng ponema kapag ang isang titik ay napapalitan ng iba (o -> u)." },
+            { q: "Alin sa mga sumusunod ang isang halimbawa ng klaster o kambal-katinig?", options: ["Bahay", "Aliw", "Prutas", "Kamay"], correct: 2, exp: "Ang 'pr' sa prutas ay halimbawa ng klaster dahil may dalawang katinig sa isang pantig." },
+            { q: "Sino ang may-akda ng 'Doctrina Christiana', ang kauna-unahang aklat na nalimbag sa Pilipinas noong 1593?", options: ["Jose Rizal", "Padre Juan de Placencia", "Lope K. Santos", "Graciano Lopez Jaena"], correct: 1, exp: "Si Padre Juan de Placencia ang sumulat ng unang aklat sa Pilipinas." },
+            { q: "Ang 'Urbana at Feliza' ay isang akdang naglalaman ng palitan ng liham ng dalawang magkapatid tungkol sa mabuting asal. Sino ang sumulat nito?", options: ["Modesto de Castro", "Jose dela Cruz", "Pascual Poblete", "Valeriano Hernandez-Peña"], correct: 0, exp: "Si Padre Modesto de Castro ang tinaguriang 'Ama ng Tuluyang Klasika sa Tagalog'." },
+            { q: "Ano ang tawag sa mga salitang naglalarawan sa pangngalan o panghalip?", options: ["Pandiwa", "Pang-uri", "Pang-abay", "Pangatnig"], correct: 1, exp: "Ang pang-uri ay nagbibigay-turing sa pangngalan o panghalip." },
+            { q: "'Ang mamatay nang dahil sa iyo.' Ano ang pokus ng pandiwang 'mamatay' sa linyang ito mula sa Lupang Hinirang?", options: ["Pokus sa Tagaganap", "Pokus sa Layon", "Pokus sa Sanhi", "Pokus sa Ganapan"], correct: 2, exp: "Pokus sa sanhi dahil ang paksa ang siyang dahilan o sanhi ng pagkamatay." },
+            { q: "Aling uri ng tula ang walang sukat at walang tugma ngunit may aliw-iw?", options: ["Tradisyunal na tula", "Malayang taludturan", "Soneto", "Haiku"], correct: 1, exp: "Ang malayang taludturan (free verse) ay walang sinusunod na sukat o tugma." },
+            { q: "Sino ang tinaguriang 'Huseng Sisiw' na naging guro ni Francisco Balagtas sa pagsulat ng tula?", options: ["Jose dela Cruz", "Jose Corazon de Jesus", "Amado V. Hernandez", "Severino Reyes"], correct: 0, exp: "Si Jose dela Cruz ang tinaguriang Huseng Sisiw." },
+            { q: "Sa pagsusuring pampanitikan, anong teorya ang nakatuon sa pakikibaka ng mga manggagawa at mahihirap laban sa mga mayayaman?", options: ["Humanismo", "Markismo", "Feminismo", "Eksistensyalismo"], correct: 1, exp: "Ang Markismo ay tumatalakay sa tunggalian ng mga uri sa lipunan." },
+            { q: "Alin ang tamang gamit ng 'ng' at 'nang'?", options: ["Tumakbo siya ng mabilis.", "Kumain siya nang marami.", "Ang anak nang presidente.", "Matulog ka na ng mahimbing."], correct: 1, exp: "Ginagamit ang 'nang' sa pang-abay na pamaraan." },
+            { q: "Ano ang kahulugan ng idyomang 'nagbibilang ng poste'?", options: ["Masipag magtrabaho", "Walang trabaho", "Inhinyero sa kalsada", "Mapagmatas"], correct: 1, exp: "Ito ay idyoma para sa taong walang hanapbuhay." },
+            { q: "Sa metodolohiya ng pagtuturo, ano ang tawag sa paraan kung saan nagsisimula ang talakayan sa mga halimbawa patungo sa pagbuo ng tuntunin?", options: ["Induktibo", "Deduktibo", "Integrated", "Discovery"], correct: 0, exp: "Ang pamaraang induktibo ay mula sa partikular patungong panlahat." },
+            { q: "Alin sa mga sumusunod ang itinuturing na 'Gintong Panahon' ng Panitikang Pilipino?", options: ["Panahon ng Kastila", "Panahon ng Amerikano", "Panahon ng Hapon", "Panahon ng Bagong Lipunan"], correct: 2, exp: "Dahil ipinagbawal ang Ingles at namayagpag ang Tagalog noong panahon ng Hapon." },
+            { q: "Sino ang sumulat ng tulang 'Ako ang Daigdig' na nagpakilala ng malayang taludturan sa Pilipinas?", options: ["Alejandro G. Abadilla", "Virgilio Almario", "Teodoro Agoncillo", "Bienvenido Lumbera"], correct: 0, exp: "Si AGA ang nagpakilala ng malayang taludturan." },
+            { q: "Ano ang tawag sa yunit ng wika na nabubuo mula sa pagsasama-sama ng mga morpema?", options: ["Sugnay", "Parirala", "Salita", "Diskurso"], correct: 2, exp: "Ang salita ang yunit na nabubuo sa pagsasama ng mga morpema." },
+            { q: "Alin sa mga sumusunod ang isang anyo ng dula na may kantahan at sayawan, at karaniwang tumatalakay sa pag-ibig at suliraning panlipunan?", options: ["Senakulo", "Sarsuwela", "Tibag", "Panunuluyan"], correct: 1, exp: "Sarsuwela ang tawag sa anyong ito ng dula." },
+            { q: "Sino ang sumulat ng 'Nena at Neneng', na itinuturing na isa sa mga unang nobelang Tagalog?", options: ["Lope K. Santos", "Valeriano Hernandez-Peña", "Faustino Aguilar", "Inigo Ed Regalado"], correct: 1, exp: "Nobela ito ni Valeriano Hernandez-Peña." },
+            { q: "Ano ang tawag sa pag-aaral ng relasyon ng wika at ng lipunan?", options: ["Antropolohiya", "Sosyolingguwistika", "Psycholinguistics", "Philology"], correct: 1, exp: "Sosyolingguwistika ang pag-aaral sa ugnayan ng wika at lipunan." },
+            { q: "Alin sa mga sumusunod ang wastong gamit ng salitang 'may' at 'mayroon'?", options: ["Mayroon siyang dalang pagkain.", "May tao sa loob ng bahay.", "May pera ka ba?", "Lahat ng nabanggit ay tama."], correct: 3, exp: "Lahat ng nabanggit ay sumusunod sa wastong gamit." },
+            { q: "Ano ang tawag sa bantas na ginagamit sa paghihiwalay ng mga salitang inuulit (hal. araw-araw)?", options: ["Kudlit", "Gitling", "Tutuldok", "Kuwit"], correct: 1, exp: "Gitling ang ginagamit sa mga salitang inuulit." },
+            { q: "Sino ang Ama ng Maikling Kuwentong Tagalog?", options: ["Deogracias A. Rosario", "Efren Abueg", "Genoveva Edroza-Matute", "Narciso Reyes"], correct: 0, exp: "Si Deogracias A. Rosario ang kinikilalang Ama nito." },
+            { q: "Ang 'Lupang Hinirang' ay unang tinugtog sa anong instrumento noong idineklara ang kalayaan sa Kawit, Cavite?", options: ["Gitara", "Piyano", "Banda (mga instrumentong hinihipan)", "Biyolin"], correct: 2, exp: "Banda ang unang tumugtog ng ating pambansang awit." },
+            { q: "Anong uri ng tayutay ang gumagamit ng mga salitang 'parang', 'gaya ng', at 'katulad ng'?", options: ["Pagwawangis (Metaphor)", "Pagtutulad (Simile)", "Pagbibigay-katauhan (Personification)", "Pagmamalabis (Hyperbole)"], correct: 1, exp: "Pagtutulad o Simile ang tawag sa ganitong uri ng paghahambing." },
+            { q: "Alin sa mga sumusunod ang layunin ng K-12 kurikulum sa asignaturang Filipino?", options: ["Mapalalim ang kaalaman sa kasaysayan ng ibang bansa.", "Malinang ang kakayahang komunikatibo, replektibo, at mapanuring pag-iisip.", "Mapabilis ang pag-aaral ng wikang Ingles.", "Makabisado ang lahat ng salita sa diksyunaryo."], correct: 1, exp: "Layunin nito ang paglinang ng kakayahang pang-literasi." },
+            { q: "Anong bahagi ng pananalita ang nag-uugnay sa dalawang salita, parirala, o sugnay, gaya ng 'at', 'pati', at 'dahil sa'?", options: ["Pang-ukol", "Pang-angkop", "Pangatnig", "Pananda"], correct: 2, exp: "Ang pangatnig (conjunction) ay ginagamit sa pagpapatanda ng ugnayan ng mga yunit ng pangungusap." },
+            { q: "Sa pangungusap na 'Ipinampunas niya ng sapatos ang lumang basahan,' ano ang pokus ng pandiwa?", options: ["Pokus sa Layon", "Pokus sa Tagaganap", "Pokus sa Gamit (Instrumental)", "Pokus sa Direksyunal"], correct: 2, exp: "Pokus sa gamit dahil ang paksa (lumang basahan) ang siyang ginamit upang isagawa ang kilos ng pandiwa." },
+            { q: "Sino ang tinaguriang 'Ama ng Balarilang Tagalog' na sumulat ng 'Balarila ng Wikang Pambansa'?", options: ["Lope K. Santos", "Julian Felipe", "Manuel L. Quezon", "Jose Villa Panganiban"], correct: 0, exp: "Si Lope K. Santos ang kinikilalang ama ng balarila at siya ring bumuo ng Abakada." },
+            { q: "Anong teorya ng pampanitikan ang naniniwalang ang babae ay may sariling kakayahan at hindi lamang pantulong sa lalaki?", options: ["Markismo", "Feminismo", "Humanismo", "Realismo"], correct: 1, exp: "Ang feminismo ay naglalayong itampok ang lakas, talino, at papel ng mga kababaihan sa lipunan at panitikan." },
+            { q: "Alin sa mga sumusunod ang halimbawa ng dipthonggo?", options: ["Klase", "Bahay", "Plano", "Blusa"], correct: 1, exp: "Ang dipthonggo ay ang pagsasama ng patinig at ng malapatinig na w at y sa loob ng isang pantig (hal. -ay)." },
+            { q: "Anong uri ng panitikan ang 'Florante at Laura'?", options: ["Korido", "Awit", "Elehiya", "Oda"], correct: 1, exp: "Ang 'Florante at Laura' ay isang awit dahil ito ay may 12 pantig bawat taludtod at binibigkas nang mabagal." },
+            { q: "Ano ang tawag sa pinakamaliit na yunit ng tunog na nagpapabago sa kahulugan ng isang salita?", options: ["Morpema", "Ponema", "Alomorp", "Sintaks"], correct: 1, exp: "Ang ponema ang pundasyon ng tunog sa wika; ang pagbabago nito ay nagbabago sa kahulugan ng salita." },
+            { q: "Ano ang kahulugan ng idyomang 'itaga sa bato'?", options: ["Maging malakas", "Magtago ng lihim", "Tandaan o pakatandaan", "Makipag-away"], correct: 2, exp: "Ginagamit ito kapag ang isang tao ay nangangako na ang isang bagay ay hindi niya malilimutan." },
+            { q: "Sino ang sumulat ng nobelang 'Banaag at Sikat' na itinuturing na Bibliya ng mga manggagawang Pilipino?", options: ["Lope K. Santos", "Amado V. Hernandez", "Lazaro Francisco", "Faustino Aguilar"], correct: 0, exp: "Tinatalakay ng nobelang ito ang mga kaisipang sosyalismo at karapatan ng mga manggagawa." },
+            { q: "Anong uri ng pagbabagong morpoponemiko ang naganap sa salitang 'niluto' mula sa 'linuto'?", options: ["Pagkaltas ng Ponema", "Metatesis", "Pagpapalit ng Ponema", "Asimilasyon"], correct: 1, exp: "Nagakaroon ng metatesis kapag nagpapalit ng posisyon ang mga titik (l at n) sa loob ng salita." },
+            { q: "Alin sa mga sumusunod ang itinuturing na pinakamatandang sistema ng pagsulat ng mga Pilipino bago dumating ang mga Kastila?", options: ["Alibata", "Baybayin", "Abakada", "Alpabetong Romano"], correct: 1, exp: "Baybayin ang wastong tawag sa sinaunang paraan ng pagsulat na binubuo ng 17 titik." },
+            { q: "Anong bantas ang ginagamit upang ipakita ang pagkakasunod-sunod ng mga oras?", options: ["Tutuldok-kuwit", "Tutuldok (Colon)", "Kudlit", "Gitling"], correct: 1, exp: "Ginagamit ang tutuldok sa pagsulat ng oras (hal. 8:30 PM)." },
+            { q: "Sino ang tinaguriang 'Makata ng mga Manggagawa'?", options: ["Jose Corazon de Jesus", "Amado V. Hernandez", "Francisco Balagtas", "Alejandro Abadilla"], correct: 1, exp: "Kilala si Amado V. Hernandez sa kanyang mga akdang tumatalakay sa kalagayan ng mga obrero." },
+            { q: "Ano ang tawag sa antas ng wika na ginagamit sa mga seryosong publikasyon at sa paaralan?", options: ["Balbal", "Kolokyal", "Lalawiganin", "Pormal"], correct: 3, exp: "Ang pormal na wika ay kinikilala ng nakararami at ginagamit sa mga pormal na okasyon." },
+            { q: "Alin ang tamang baybay ayon sa makabagong alpabetong Filipino?", options: ["Relehiyion", "Relihyon", "Relihiyon", "Relihion"], correct: 2, exp: "Ang tamang baybay ay sumusunod sa tuntunin ng ortograpiya ng wikang pambansa." },
+            { q: "Ano ang tawag sa pag-aaral ng kahulugan ng mga salita at pangungusap?", options: ["Morpolohiya", "Ponolohiya", "Semantika", "Pragmatika"], correct: 2, exp: "Ang semantika ay nakatuon sa interpretasyon at relasyon ng mga kahulugan sa wika." },
+            { q: "Sino ang paring Kastila na sumulat ng 'Barlaan at Josaphat,' ang unang nobelang nalimbag sa Pilipinas?", options: ["Padre Juan de Placencia", "Padre Antonio de Borja", "Padre Modesto de Castro", "Padre Jose Burgos"], correct: 1, exp: "Isinalin ni Antonio de Borja ang akdang ito na itinuturing na unang nobela sa Tagalog." },
+            { q: "Anong uri ng tayutay ang 'Ang mga bituin sa langit ay kumukurap sa atin'?", options: ["Pagtutulad", "Pagwawangis", "Pagbibigay-katauhan", "Pagtawag"], correct: 2, exp: "Binibigyan ng katangiang pantao (kumukurap) ang isang walang buhay na bagay (bituin)." },
+            { q: "Sa pagtuturo ng wika, ano ang tawag sa paggamit ng dalawang wika bilang midyum ng instruksyon?", options: ["Monolingguwalismo", "Bilingguwalismo", "Multilingguwalismo", "Diglossia"], correct: 1, exp: "Ang patakarang bilingguwal ay ang paggamit ng Filipino at Ingles sa pagtuturo." },
+            { q: "Ano ang tawag sa mga salitang nagpapahayag ng kilos o galaw?", options: ["Pangngalan", "Pandiwa", "Pang-abay", "Pang-ugnay"], correct: 1, exp: "Ang pandiwa (verb) ang nagsasaad ng aksyon o estado ng paksa." },
+            { q: "Sino ang may-akda ng maikling kuwentong 'Lupang Tinubuan' na nagwagi ng unang gantimpala noong panahon ng Hapon?", options: ["Deogracias Rosario", "Narciso Reyes", "Liwayway Arceo", "Macario Pineda"], correct: 1, exp: "Ang akda ni Narciso Reyes ay tanyag na kuwento noong 'Gintong Panahon' ng Tagalog." },
+            { q: "Ano ang tawag sa paglilipat ng kahulugan ng isang teksto mula sa isang wika patungo sa ibang wika?", options: ["Pagbasa", "Pakikinig", "Pagsasaling-wika", "Pagbuo ng Diskurso"], correct: 2, exp: "Layunin nito na mapanatili ang diwa ng orihinal na teksto sa target na wika." },
+            { q: "Anong uri ng tula ang binubuo ng labing-apat na taludtod?", options: ["Haiku", "Tanaga", "Soneto", "Elehiya"], correct: 2, exp: "Ang soneto (sonnet) ay may tiyak na estruktura na labing-apat na linya." },
+            { q: "Alin sa mga sumusunod ang bahagi ng pahayagan na naglalaman ng kuro-kuro ng patnugot?", options: ["Balitang Panlalawigan", "Klasipikadong Anunsyo", "Editoryal", "Isports"], correct: 2, exp: "Ang editoryal ang tinig ng pahayagan tungkol sa isang napapanahong isyu." },
+            { q: "Sino ang kinikilalang 'Makata ng Pag-ibig' at may sagisag na 'Batute'?", options: ["Jose Corazon de Jesus", "Francisco Balagtas", "Florentino Collantes", "Emilio Jacinto"], correct: 0, exp: "Siya ang tinaguriang 'Hari ng Balagtasan' at tanyag sa kanyang mga tulang liriko." },
+            { q: "Ano ang tawag sa pag-aaral ng wastong baybay ng mga salita?", options: ["Ponolohiya", "Ortograpiya", "Paleograpiya", "Etimolohiya"], correct: 1, exp: "Ang ortograpiya ay ang set ng mga tuntunin sa pagsulat ng wika." },
+            { q: "Anong uri ng pangungusap ang 'Naku! May sunog!'?", options: ["Paturol", "Patanong", "Padamdam", "Pautos"], correct: 2, exp: "Ito ay nagpapahayag ng matinding damdamin at nagtatapos sa bantas na pandamdam (!)." },
+            { q: "Sino ang sumulat ng nobelang 'Noli Me Tangere'?", options: ["Marcelo H. del Pilar", "Jose Rizal", "Andres Bonifacio", "Apolinario Mabini"], correct: 1, exp: "Isinulat ito ni Rizal upang ilantad ang kanser ng lipunang Pilipino sa ilalim ng Kastila." },
+            { q: "Ano ang tawag sa barayti ng wika na nakabatay sa pinanggalingang rehiyon ng nagsasalita?", options: ["Idyolek", "Dayalekto", "Sosyolek", "Etnolek"], correct: 1, exp: "Ang dayalekto ay wikang ginagamit sa isang partikular na lugar." },
+            { q: "Alin sa mga sumusunod ang wastong gamit ng 'pinto' at 'pintuan'?", options: ["Nakasara ang pintuan.", "Dumaan ka sa pintuan.", "Buksan mo ang pintuan.", "Pintuan ang inilalagay sa bisagra."], correct: 1, exp: "Ang 'pinto' ay ang mismong harang, samantalang ang 'pintuan' ay ang espasyong dinaraanan." },
+            { q: "Ano ang tawag sa tulang may pitong pantig bawat taludtod at binubuo ng apat na linya na may tugmaang aaaa?", options: ["Haiku", "Tanaga", "Dalit", "Ambahan"], correct: 1, exp: "Ang tanaga ay isang katutubong anyo ng tula na maikli ngunit makahulugan." },
+            { q: "Sino ang Ama ng Wikang Pambansa?", options: ["Sergio Osmeña", "Manuel L. Quezon", "Jose P. Laurel", "Ramon Magsaysay"], correct: 1, exp: "Si Manuel L. Quezon ang nagtulak na magkaroon ng isang wikang pambansa." },
+            { q: "Ano ang tawag sa pag-aaral ng kasaysayan o pinagmulan ng isang salita?", options: ["Semantika", "Etimolohiya", "Antropolohiya", "Morpolohiya"], correct: 1, exp: "Tinatalakay ng etimolohiya kung paano nagbago ang anyo at kahulugan ng salita sa panahon." },
+            { q: "Ano ang pokus ng pandiwa sa pangungusap na 'Nagluto ang nanay ng adobo'?", options: ["Pokus sa Tagaganap (Aktor)", "Pokus sa Layon", "Pokus sa Tagatanggap", "Pokus sa Ganapan"], correct: 0, exp: "Ang paksa ng pangungusap (nanay) ang siyang gumaganap sa kilos." },
+            { q: "Sa ilalim ng MTB-MLE, ano ang pangunahing wikang gagamitin sa pagtuturo mula Kindergarten hanggang Grade 3?", options: ["Filipino", "Ingles", "Unang Wika (Mother Tongue)", "Espanyol"], correct: 2, exp: "Layunin nito na gamitin ang wika sa tahanan upang mas madaling matuto ang bata." }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 60;
+        let totalTimeUsed = 0;
+
+        function startQuiz() { showQuestion(); }
+
+        function showQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById('quizProgress').innerText = `${currentIdx + 1} / ${questions.length}`;
+            document.getElementById('questionText').innerText = q.q;
+            const container = document.getElementById('quizOptions');
+            container.innerHTML = '';
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = `${String.fromCharCode(65 + index)}. ${opt}`;
+                btn.onclick = () => selectOption(index);
+                container.appendChild(btn);
+            });
+            document.getElementById('explanationBox').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer); timeLeft = 60;
+            document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+            timer = setInterval(() => {
+                timeLeft--; document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) { clearInterval(timer); selectOption(-1); }
+            }, 1000);
+        }
+
+        function selectOption(index) {
+            clearInterval(timer);
+            const q = questions[currentIdx];
+            const timeSpent = 60 - timeLeft;
+            totalTimeUsed += timeSpent;
+            const options = document.querySelectorAll('.option-btn');
+            options.forEach(btn => btn.disabled = true);
+            if (index === q.correct) {
+                options[index].classList.add('correct'); score++;
+                document.getElementById('feedbackTitle').innerText = "Tama!";
+                document.getElementById('feedbackTitle').style.color = "#4CAF50";
+            } else {
+                if (index !== -1) options[index].classList.add('wrong');
+                options[q.correct].classList.add('correct');
+                document.getElementById('feedbackTitle').innerText = "Mali";
+                document.getElementById('feedbackTitle').style.color = "#f44336";
+            }
+            document.getElementById('explanationText').innerText = q.exp;
+            document.getElementById('explanationBox').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentIdx++;
+            if (currentIdx < questions.length) showQuestion();
+            else showResults();
+        }
+
+        function showResults() {
+            document.getElementById('quizPage').style.display = 'none';
+            document.getElementById('quizResultPage').classList.add('active');
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('totalQuestions').innerText = questions.length;
+            saveResult(score, questions.length, totalTimeUsed);
+        }
+        startQuiz();
+    </script>
+</body>
+</html>
