@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashReview - Science, Technology, and Society</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Quiz Page -->
+    <div id="quizPage" class="page active" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="dashboard-header" style="width: 100%; max-width: 800px; margin-bottom: 20px;">
+            <button class="btn-back" onclick="window.location.href='index.html'">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 style="font-size: 1.2rem; color: var(--text-muted);">Science, Technology, and Society</h2>
+            <div class="quiz-timer" id="quizTimer">60s</div>
+            <div id="quizProgress" style="font-weight: 700; background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 15px;">1 / 50</div>
+        </div>
+
+        <div class="quiz-container">
+            <div class="quiz-question-box">
+                <h3 id="questionText">Loading question...</h3>
+            </div>
+
+            <div class="quiz-options" id="quizOptions">
+                <!-- Options inserted here -->
+            </div>
+
+            <div id="explanationBox" class="explanation-box" style="display: none;">
+                <strong id="feedbackTitle">Correct!</strong>
+                <p id="explanationText">Explanation goes here...</p>
+            </div>
+
+            <button id="nextBtn" class="btn-submit" style="display: none; margin-top: 10px;" onclick="nextQuestion()">
+                Next Question <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quiz Result Page -->
+    <div id="quizResultPage" class="page" style="display: flex; align-items: center; justify-content: center;">
+        <div class="result-container text-center">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <h2 id="resultTitle">FlashReview Completed!</h2>
+            <p class="result-score">Your Score: <span id="finalScore">0</span> / <span id="maxScore">50</span></p>
+            <div id="resultFeedback" class="mb-20">Great job! Keep reviewing.</div>
+            
+            <div class="topic-actions">
+                <button class="btn-action" onclick="window.location.href='index.html'">
+                    <i class="fas fa-home"></i> Home
+                </button>
+                <button class="btn-action secondary" onclick="location.reload()">
+                    <i class="fas fa-redo"></i> Restart FlashReview
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "Which period is known as the \"Age of Enlightenment,\" where the use of reason and the scientific method began to challenge traditional authority?", options: ["Renaissance", "Scientific Revolution", "Industrial Revolution", "Information Age"], correct: 1, exp: "The Scientific Revolution shifted the human perspective from faith-based to evidence-based." },
+            { q: "In Thomas Kuhn’s theory, what occurs when a current scientific framework can no longer explain new discoveries, leading to a fundamental change in view?", options: ["Scientific Evolution", "Paradigm Shift", "Technological Drift", "Social Construction"], correct: 1, exp: "A paradigm shift is a radical change in the basic concepts and experimental practices of a scientific discipline." },
+            { q: "Which ancient civilization is credited with the invention of papyrus, the water clock (clepsydra), and advanced surgical instruments?", options: ["Mesopotamian", "Chinese", "Egyptian", "Indus Valley"], correct: 2, exp: "Egyptians were pioneers in writing materials and early medical technology." },
+            { q: "The \"Heliocentric Model,\" which posited that the Earth revolves around the Sun, was a revolutionary idea popularized by:", options: ["Claudius Ptolemy", "Nicolaus Copernicus", "Aristotle", "Isaac Newton"], correct: 1, exp: "Copernicus challenged the Geocentric/Ptolemaic view that the Earth was the center of the universe." },
+            { q: "Which intellectual revolution introduced the idea that human behavior is driven by the unconscious mind and repressed desires?", options: ["Darwinian Revolution", "Copernican Revolution", "Freudian Revolution", "Information Revolution"], correct: 2, exp: "Sigmund Freud founded psychoanalysis, changing how we view human psychology and society." },
+            { q: "What refers to the ethical dilemma where technology advances faster than the laws and social norms can keep up with?", options: ["Technological Determinism", "Collingridge Dilemma", "Cultural Lag", "Social Shaping of Technology"], correct: 2, exp: "Coined by William Ogburn, Cultural Lag occurs when society struggles to adapt to rapid technological change." },
+            { q: "In the context of the environment, what does \"Sustainable Development\" mean?", options: ["Using all available resources to boost the economy today.", "Limiting technology to prevent any change to nature.", "Meeting the needs of the present without compromising the ability of future generations to meet theirs.", "Relying solely on fossil fuels for industrial growth."], correct: 2, exp: "This is the standard definition established by the Brundtland Commission." },
+            { q: "Which of the following is considered a major contribution of the Pre-Colonial Filipinos to science and technology?", options: ["The establishment of the Bureau of Science.", "The construction of the Banaue Rice Terraces.", "The invention of the Karaoke machine.", "The creation of the first Philippine satellite."], correct: 1, exp: "The Rice Terraces demonstrate advanced engineering and irrigation knowledge of early Filipinos." },
+            { q: "What is the \"Digital Divide\"?", options: ["The physical space between two computer servers.", "The gap between those who have access to modern information technology and those who do not.", "The process of dividing a hard drive into partitions.", "The mathematical difference between binary codes."], correct: 1, exp: "It highlights inequality in access to information and communication technology." },
+            { q: "Which theory suggests that technology is the primary driver of social change and cultural values?", options: ["Social Constructivism", "Technological Determinism", "Actor-Network Theory", "Humanism"], correct: 1, exp: "Technological Determinism argues that \"technology makes the society.\"" },
+            { q: "The \"Precautionary Principle\" in STS suggests that:", options: ["If an action or policy has a suspected risk of causing harm to the public or environment, the burden of proof falls on those taking the action.", "Technology should be implemented immediately to see if it works.", "Scientific research should never be limited by ethical concerns.", "Cost-benefit analysis is the only factor in choosing new technology."], correct: 0, exp: "It emphasizes \"safety first\" in the face of scientific uncertainty." },
+            { q: "Which of the following is an example of \"Green Technology\"?", options: ["Coal-fired power plants", "Single-use plastic production", "Solar energy panels", "Lead-based paints"], correct: 2, exp: "Green tech aims to minimize negative impacts on the environment." },
+            { q: "In STS, the concept of \"Good Life\" is often discussed in relation to which philosopher's view of Eudaimonia (human flourishing)?", options: ["Plato", "Socrates", "Aristotle", "Epicurus"], correct: 2, exp: "Aristotle argued that technology and science should serve the ultimate goal of human flourishing." },
+            { q: "What was the \"Y2K Bug\" an example of in the history of technology?", options: ["A biological virus spread via computers.", "A software problem related to how dates were formatted at the turn of the century.", "A revolution in wireless communication.", "The invention of the World Wide Web."], correct: 1, exp: "It caused global concern that computers would crash on January 1, 2000." },
+            { q: "Which Philippine law aims to protect the country's marine resources and ensure the rights of small-scale fishermen?", options: ["The Clean Air Act", "The Fisheries Code of 1998", "The Ecological Solid Waste Management Act", "The Renewable Energy Act"], correct: 1, exp: "RA 8550 governs the management and conservation of fisheries and aquatic resources." }
+            ,
+            { q: "Charles Darwin’s theory of evolution by natural selection was controversial because it challenged:", options: ["The idea that the Earth revolves around the Sun.", "The religious belief of \"Creationism\" or that species are fixed and unchanging.", "The use of gravity in explaining planetary motion.", "The existence of the unconscious mind."], correct: 1, exp: "The Darwinian Revolution shifted the view of human origins from divine creation to biological evolution." },
+            { q: "Which period in history is characterized by the transition from hand production methods to machines and the rise of the steam engine?", options: ["Renaissance", "Industrial Revolution", "Information Age", "Middle Ages"], correct: 1, exp: "The Industrial Revolution (18th–19th century) transformed agrarian societies into industrialized and urban ones." },
+            { q: "What is the \"Nanotechnology\" focus area?", options: ["The study of giant planetary structures.", "Manipulation of matter on an atomic, molecular, and supramolecular scale.", "The history of ancient civilizations.", "The study of large-scale marine ecosystems."], correct: 1, exp: "Nanotechnology deals with structures sized between 1 to 100 nanometers." },
+            { q: "Which international agreement aims to reduce greenhouse gas emissions to combat climate change?", options: ["The Geneva Convention", "The Paris Agreement", "The Treaty of Versailles", "The ASEAN Charter"], correct: 1, exp: "Adopted in 2015, it is a legally binding international treaty on climate change." },
+            { q: "In the Philippines, what was the primary goal of the \"Balik Scientist Program\"?", options: ["To deport foreign scientists.", "To encourage Filipino scientists working abroad to return and share their expertise.", "To send all Filipino teachers to work in space.", "To replace traditional farmers with robots."], correct: 1, exp: "This program aims to strengthen the scientific and technological resources of the Philippines." },
+            { q: "What is \"Eutrophication\" in bodies of water usually caused by?", options: ["Excessive oxygen in the water.", "Runoff of fertilizers (nitrogen and phosphorus) leading to algal blooms.", "The presence of too many fish.", "Lack of sunlight reaching the bottom."], correct: 1, exp: "Algal blooms deplete oxygen in the water, often killing fish and other aquatic life." },
+            { q: "Which scientist is famous for the equation E=mc², which laid the foundation for modern physics?", options: ["Isaac Newton", "Albert Einstein", "Marie Curie", "Nikola Tesla"], correct: 1, exp: "Einstein’s theory of relativity revolutionized our understanding of space, time, and energy." },
+            { q: "The \"Information Age\" is most associated with the invention of the:", options: ["Steam Engine", "Printing Press", "Microprocessor/Computer", "Wheel"], correct: 2, exp: "The shift from traditional industry to an economy based on information computerization." },
+            { q: "What is \"Biotechnology\"?", options: ["The study of rocks and minerals.", "The use of living systems and organisms to develop or make products.", "Building bridges using biological materials.", "The study of extraterrestrial life."], correct: 1, exp: "Examples include vaccines, antibiotics, and genetically modified organisms (GMOs)." },
+            { q: "Which Philippine government agency is responsible for overseeing science and technology projects?", options: ["DepEd", "DOST (Department of Science and Technology)", "DOH", "DPWH"], correct: 1, exp: "DOST provides central direction and leadership for all scientific and technological activities in the country." },
+            { q: "What does \"Genetically Modified Organism\" (GMO) mean?", options: ["An organism that has grown naturally without help.", "An organism whose genetic material has been altered using genetic engineering techniques.", "An animal that has been trained by humans.", "A plant that was grown in a greenhouse."], correct: 1, exp: "GMOs are used in agriculture to increase yield or resistance to pests." },
+            { q: "The concept of \"Social Construction of Technology\" (SCOT) argues that:", options: ["Technology determines how society behaves.", "Human actions and social factors determine the design and use of technology.", "Technology is always harmful to society.", "Science and technology are the same thing."], correct: 1, exp: "It argues that technology does not follow a linear path but is shaped by social groups." },
+            { q: "What is the \"Ecological Footprint\"?", options: ["A literal footprint left in the mud.", "A measure of human demand on the Earth's ecosystems.", "The number of trees planted by a person.", "The study of fossilized tracks."], correct: 1, exp: "It compares human consumption of natural resources with Earth's capacity to regenerate them." },
+            { q: "Which intellectual revolution started when Nicolaus Copernicus published \"De revolutionibus orbium coelestium\"?", options: ["Industrial Revolution", "Copernican Revolution", "Information Revolution", "Darwinian Revolution"], correct: 1, exp: "It moved the center of the universe from the Earth (Geocentric) to the Sun (Heliocentric)." },
+            { q: "What was the \"Mesoamerican\" contribution to mathematics?", options: ["The invention of the calculator.", "The independent development of the concept of \"zero.\"", "The use of Roman numerals.", "The invention of Trigonometry."], correct: 1, exp: "The Mayans were among the first civilizations to use the zero placeholder in their vigesimal system." },
+            { q: "Which era is known as the \"Cradle of Scientific Civilization\" because of the development of the city-state and early philosophy?", options: ["Ancient China", "Ancient Greece", "Ancient Egypt", "Ancient Rome"], correct: 1, exp: "Greek philosophers were the first to seek natural explanations for physical phenomena." },
+            { q: "What is \"Artificial Intelligence\" (AI)?", options: ["A person pretending to be a robot.", "The simulation of human intelligence processes by machines, especially computer systems.", "A computer that can think exactly like a human in every way.", "A very fast calculator."], correct: 1, exp: "AI includes learning, reasoning, and self-correction by machines." },
+            { q: "The \"Sixth Mass Extinction\" is unique from previous ones because it is primarily caused by:", options: ["Asteroid impacts.", "Volcanic activity.", "Human activities (Anthropogenic factors).", "Solar flares."], correct: 2, exp: "Habitat destruction, pollution, and climate change driven by humans are accelerating species loss." },
+            { q: "Who is the \"Father of Modern Taxonomy\" who developed the binomial nomenclature for naming species?", options: ["Charles Darwin", "Gregor Mendel", "Carl Linnaeus", "Louis Pasteur"], correct: 2, exp: "Linnaeus established the system of naming organisms using Genus and Species (e.g., Homo sapiens)." },
+            { q: "What does the \"Great Acceleration\" refer to in STS?", options: ["The speed of the first steam engine.", "The rapid increase in human activity and its impact on the Earth's geology since the mid-20th century.", "The process of traveling to Mars.", "The fast growth of plants in a laboratory."], correct: 1, exp: "It marks the start of the \"Anthropocene,\" where human impact became global and synchronized." },
+            { q: "In the context of STS, what is \"Technoscience\"?", options: ["Science that does not use technology.", "The inseparable link between scientific research and technological development.", "A science fiction genre.", "The study of ancient tools."], correct: 1, exp: "Most modern science is performed using complex technology, and technology is developed through science." },
+            { q: "Which ancient Chinese invention revolutionized navigation?", options: ["Gunpowder", "Paper", "Magnetic Compass", "Printing Press"], correct: 2, exp: "The compass allowed sailors to navigate accurately even when the sun and stars were not visible." },
+            { q: "What is the \"Tragedy of the Commons\"?", options: ["A play written by Shakespeare about science.", "A situation where individuals acting in their own self-interest deplete shared resources.", "The lack of funding for public schools.", "A massive earthquake in a common area."], correct: 1, exp: "It explains why shared resources (like the ocean or air) are often overexploited." },
+            { q: "Which Philippine law provides for the protection and management of the environment and its natural resources through the \"Polluter Pays\" principle?", options: ["Clean Air Act", "Ecological Solid Waste Management Act", "Philippine Environmental Code", "Toxic Substances and Hazardous and Nuclear Wastes Control Act"], correct: 0, exp: "RA 8749 aims to achieve and maintain clean air that meets the National Air Quality guideline values." },
+            { q: "What was the \"Industrial Revolution 4.0\" (Industry 4.0)?", options: ["The use of coal and steam.", "Mass production using electricity.", "The automation of manufacturing using smart technology and data.", "The invention of the wheel."], correct: 2, exp: "It involves the \"Internet of Things\" (IoT), cloud computing, and AI in the industry." },
+            { q: "Which theory of truth suggests that something is true if it works in practice?", options: ["Correspondence Theory", "Coherence Theory", "Pragmatism", "Idealism"], correct: 2, exp: "Pragmatists like William James believe the \"truth\" of an idea is its practical utility." },
+            { q: "What is \"Cybersecurity\"?", options: ["Protecting computers and networks from digital attacks.", "A secure way to buy a computer.", "A robot that acts as a security guard.", "Locking your laptop in a safe."], correct: 0, exp: "It is the practice of defending against malicious attacks on electronic systems." },
+            { q: "Who is the Filipina scientist known as the \"Mother of Philippine Pediatrics\" and founded the first pediatric hospital in the country?", options: ["Maria Orosa", "Fe del Mundo", "Angel Alcala", "Paulo Campos"], correct: 1, exp: "Dr. Fe del Mundo was also the first woman admitted to Harvard Medical School." },
+            { q: "What was the main contribution of the \"Vedic\" (Ancient Indian) civilization to science?", options: ["The first map of the world.", "Ayurveda (traditional medicine) and advanced metallurgy (iron pillar).", "The invention of the telescope.", "The use of hieroglyphics."], correct: 1, exp: "Ancient India made significant strides in medicine and metalworking." },
+            { q: "What is \"E-waste\"?", options: ["Email that you have deleted.", "Electronic products that are nearing the end of their \"useful life.\"", "Energy that is wasted by leaving lights on.", "Evidence found on the internet."], correct: 1, exp: "Discarded computers, phones, and appliances contain toxic materials that need special disposal." },
+            { q: "Which term describes the ethical use of biological technology, especially in medicine?", options: ["Bioinformatics", "Bioethics", "Biometry", "Biocentrism"], correct: 1, exp: "Bioethics deals with issues like cloning, euthanasia, and stem cell research." },
+            { q: "What is \"Technological Somnambulism\" (Langdon Winner)?", options: ["Sleepwalking while using a phone.", "The tendency of people to use technology without thinking about its social or political consequences.", "A medical condition caused by screen time.", "Inventing things while you are asleep."], correct: 1, exp: "It suggests we are \"sleepwalking\" into a world transformed by technology without critical reflection." },
+            { q: "Which ancient civilization developed the \"Sexagesimal\" (base 60) system, which we still use today for measuring time?", options: ["Romans", "Sumerians (Mesopotamia)", "Chinese", "Aztecs"], correct: 1, exp: "This system gave us the 60-second minute and 60-minute hour." },
+            { q: "What is the \"Heideggerian\" view of technology?", options: ["Technology is just a tool to be used.", "Technology is a \"way of revealing\" that treats nature as a \"standing reserve.\"", "Technology will eventually save the world.", "Technology should be banned."], correct: 1, exp: "Martin Heidegger warned that modern technology frames nature purely as a resource for human use." },
+            { q: "The ultimate goal of STS as a field of study is to:", options: ["Make everyone a scientist.", "Create more powerful weapons.", "Promote critical thinking about how science and technology shape and are shaped by society.", "Replace teachers with computers."], correct: 2, exp: "STS aims to bridge the gap between technical knowledge and social responsibility." }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 60;
+
+        function startQuiz() {
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById('quizProgress').innerText = `${currentIdx + 1} / ${questions.length}`;
+            document.getElementById('questionText').innerText = q.q;
+            
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = `${String.fromCharCode(65 + index)}. ${opt}`;
+                btn.onclick = () => selectOption(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('explanationBox').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timeLeft = 60;
+            document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    selectOption(-1); 
+                }
+            }, 1000);
+        }
+
+        function selectOption(index) {
+            clearInterval(timer);
+            const q = questions[currentIdx];
+            const options = document.querySelectorAll('.option-btn');
+            
+            options.forEach(btn => btn.disabled = true);
+            
+            if (index === q.correct) {
+                options[index].classList.add('correct');
+                score++;
+                document.getElementById('feedbackTitle').innerText = "Correct!";
+                document.getElementById('feedbackTitle').style.color = "#4CAF50";
+            } else {
+                if (index !== -1) options[index].classList.add('wrong');
+                options[q.correct].classList.add('correct');
+                document.getElementById('feedbackTitle').innerText = "Incorrect";
+                document.getElementById('feedbackTitle').style.color = "#f44336";
+            }
+            
+            document.getElementById('explanationText').innerText = q.exp;
+            document.getElementById('explanationBox').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentIdx++;
+            if (currentIdx < questions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quizPage').style.display = 'none';
+            document.getElementById('quizResultPage').classList.add('active');
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('maxScore').innerText = questions.length;
+            
+            const percentage = (score / questions.length) * 100;
+            const feedback = document.getElementById('resultFeedback');
+
+            if (percentage === 100) {
+                feedback.innerText = "Perfect Score! You're an STS Scholar!";
+            } else if (percentage >= 80) {
+                feedback.innerText = "Excellent! You understand the impact of S&T on society.";
+            } else if (percentage >= 50) {
+                feedback.innerText = "Good job! Review the concepts for better understanding.";
+            } else {
+                feedback.innerText = "Keep reviewing! Science and society are interconnected.";
+            }
+        }
+
+        startQuiz();
+    </script>
+</body>
+</html>
