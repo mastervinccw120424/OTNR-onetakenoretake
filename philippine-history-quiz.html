@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashReview - Philippine History</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Quiz Page -->
+    <div id="quizPage" class="page active" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="dashboard-header" style="width: 100%; max-width: 800px; margin-bottom: 20px;">
+            <button class="btn-back" onclick="window.location.href='index.html'">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 style="font-size: 1.2rem; color: var(--text-muted);">Philippine History</h2>
+            <div class="quiz-timer" id="quizTimer">60s</div>
+            <div id="quizProgress" style="font-weight: 700; background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 15px;">1 / 50</div>
+        </div>
+
+        <div class="quiz-container">
+            <div class="quiz-question-box">
+                <h3 id="questionText">Loading question...</h3>
+            </div>
+
+            <div class="quiz-options" id="quizOptions">
+                <!-- Options inserted here -->
+            </div>
+
+            <div id="explanationBox" class="explanation-box" style="display: none;">
+                <strong id="feedbackTitle">Correct!</strong>
+                <p id="explanationText">Explanation goes here...</p>
+            </div>
+
+            <button id="nextBtn" class="btn-submit" style="display: none; margin-top: 10px;" onclick="nextQuestion()">
+                Next Question <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quiz Result Page -->
+    <div id="quizResultPage" class="page" style="display: flex; align-items: center; justify-content: center;">
+        <div class="result-container text-center">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <h2 id="resultTitle">FlashReview Completed!</h2>
+            <p class="result-score">Your Score: <span id="finalScore">0</span> / <span id="maxScore">50</span></p>
+            <div id="resultFeedback" class="mb-20">Great job! Keep reviewing.</div>
+            
+            <div class="topic-actions">
+                <button class="btn-action" onclick="window.location.href='index.html'">
+                    <i class="fas fa-home"></i> Home
+                </button>
+                <button class="btn-action secondary" onclick="location.reload()">
+                    <i class="fas fa-redo"></i> Restart FlashReview
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "Which of the following describes the \"Aliping Namamahay\" in pre-colonial Filipino society?", options: ["Slaves who lived in their master's house and could be sold.", "Debt-peons who lived in their own houses and could own property.", "The warrior class who protected the Datu.", "The ruling class of the barangay."], correct: 1, exp: "Unlike the Aliping sa Guiguilid, the Namamahay had their own homes and property." },
+            { q: "The \"Sanduguan\" or Blood Compact between Sikatuna and Legazpi was intended to symbolize:", options: ["The total surrender of the Filipinos to Spain.", "A treaty of friendship and alliance based on equality.", "A declaration of war against neighboring tribes.", "The start of the Galleon Trade."], correct: 1, exp: "It was a traditional ritual used to seal a bond of brotherhood." },
+            { q: "What was the primary purpose of the \"Reduccion\" policy implemented by the Spanish?", options: ["To reduce the native population through forced labor.", "To gather scattered Filipinos into \"bajo de las campanas\" (under the bells).", "To lower the taxes paid by the natives.", "To encourage Filipinos to live in the mountains."], correct: 1, exp: "Centralizing the population made tax collection and Christianization easier." },
+            { q: "Which revolt is known as the longest in Philippine history, lasting for 85 years?", options: ["The Silang Revolt", "The Dagohoy Revolt", "The Sumuroy Revolt", "The Maniago Revolt"], correct: 1, exp: "Francisco Dagohoy led the revolt in Bohol from 1744 to 1829." },
+            { q: "The opening of the Suez Canal in 1869 was significant because:", options: ["It allowed Spain to send more friars to the islands.", "It shortened travel time, facilitating the influx of liberal ideas from Europe.", "It ended the monopoly of the Tabako system.", "It led to the immediate independence of the Philippines."], correct: 1, exp: "This allowed the \"Ilustrados\" easier access to European education and liberal thought." },
+            { q: "Who was the \"Brain of the Katipunan\" and author of the \"Kartilya\"?", options: ["Andres Bonifacio", "Emilio Jacinto", "Apolinario Mabini", "Jose Rizal"], correct: 1, exp: "Jacinto was the young intellectual advisor to Bonifacio." },
+            { q: "The \"Mock Battle of Manila\" in 1898 was a secret agreement between which two groups?", options: ["Filipinos and Americans", "Filipinos and Spaniards", "Spaniards and Americans", "Americans and Japanese"], correct: 2, exp: "It was designed to transfer Manila to the US while excluding the Filipino revolutionaries." },
+            { q: "What was the first newspaper of the Propaganda Movement?", options: ["La Solidaridad", "Diariong Lunsod", "El Filibusterismo", "Kalayaan"], correct: 0, exp: "Established in Barcelona in 1889 to advocate for reforms." },
+            { q: "Who was the first President of the Commonwealth of the Philippines?", options: ["Emilio Aguinaldo", "Manuel L. Quezon", "Jose P. Laurel", "Sergio Osmeña"], correct: 1, exp: "Quezon served as the leader during the transition period before WWII." },
+            { q: "Which law promised Philippine independence after a 10-year transition period?", options: ["Hare-Hawes-Cutting Act", "Tydings-McDuffie Act", "Jones Law", "Cooper Act"], correct: 1, exp: "The Tydings-McDuffie Act of 1934 set the date for independence." },
+            { q: "The Japanese military established a puppet government in the Philippines during WWII known as the:", options: ["First Philippine Republic", "Second Philippine Republic", "Commonwealth Government", "Third Philippine Republic"], correct: 1, exp: "Jose P. Laurel was the President of this Japanese-sponsored republic." },
+            { q: "Who was the President known for his \"Filipino First Policy\"?", options: ["Diosdado Macapagal", "Ramon Magsaysay", "Carlos P. Garcia", "Ferdinand Marcos"], correct: 2, exp: "The policy prioritized Filipino businessmen over foreign investors." },
+            { q: "The 1896 Revolution was triggered by the discovery of the Katipunan. Where did the \"Cry of Pugad Lawin\" (or Balintawak) take place?", options: ["Cavite", "Bulacan", "Caloocan", "Laguna"], correct: 2, exp: "The tearing of the cedulas marked the start of the armed struggle." },
+            { q: "What was the name of the agrarian reform program of President Diosdado Macapagal?", options: ["Comprehensive Agrarian Reform Program (CARP)", "Agricultural Land Reform Code", "President Decree No. 27", "Masagana 99"], correct: 1, exp: "Enacted in 1963 to abolish share tenancy." },
+            { q: "Which Filipino general was known as the \"Boy General\" and died defending Tirad Pass?", options: ["Antonio Luna", "Gregorio del Pilar", "Miguel Malvar", "Artemio Ricarte"], correct: 1, exp: "He was 24 years old when he died covering Aguinaldo's retreat." },
+            { q: "Who was known as the 'Paralytic Mabini' and served as the 'Brain of the Revolution'?", options: ["Emilio Jacinto", "Apolinario Mabini", "Antonio Luna", "Marcelo H. Del Pilar"], correct: 1, exp: "Mabini was the chief adviser of Emilio Aguinaldo and the first Prime Minister of the Philippines." },
+            { q: "The first circumnavigation of the world was completed by Magellan’s expedition. Which ship was the only one to return to Spain?", options: ["Santiago", "Trinidad", "Victoria", "Concepcion"], correct: 2, exp: "Under the command of Juan Sebastian Elcano, the Victoria was the sole survivor of the five ships that left Spain." },
+            { q: "What was the secret society established by Marcelo H. Del Pilar in 1888 to fight the friars through peaceful means?", options: ["Katipunan", "La Liga Filipina", "Asociacion Hispano-Filipina", "Masonry"], correct: 2, exp: "This organization worked alongside the Propaganda Movement to lobby for reforms in the Spanish Cortes." },
+            { q: "Which Spanish Governor-General was responsible for the execution of the GOMBURZA in 1872?", options: ["Rafael de Izquierdo", "Carlos Maria de la Torre", "Miguel Lopez de Legazpi", "Narciso Claveria"], correct: 0, exp: "Izquierdo used the Cavite Mutiny as a pretext to execute the three priests." },
+            { q: "The 'Pact of Biak-na-Bato' resulted in a temporary truce. What was one of its main conditions?", options: ["Immediate independence", "Exile of Emilio Aguinaldo and his leaders to Hong Kong", "The execution of Andres Bonifacio", "The surrender of the Americans to Spain"], correct: 1, exp: "Leaders agreed to go to Hong Kong in exchange for 800,000 pesos and promised reforms." },
+            { q: "Who was the Filipino general known as the 'Fiery General' and was considered the most brilliant military strategist?", options: ["Gregorio del Pilar", "Antonio Luna", "Emilio Aguinaldo", "Macario Sakay"], correct: 1, exp: "Luna founded the first military academy and led forces in the Philippine-American War." },
+            { q: "The 'Treaty of Paris' (1898) was the agreement where Spain ceded the Philippines to the US for how much?", options: ["$10 million", "$15 million", "$20 million", "$25 million"], correct: 2, exp: "The US paid Spain $20,000,000 for the infrastructure and control of the islands." },
+            { q: "What was the name of the first American civil governor of the Philippines?", options: ["William Howard Taft", "Douglas MacArthur", "Wesley Merritt", "Luke Wright"], correct: 0, exp: "Taft headed the Second Philippine Commission and later became the US President." },
+            { q: "The 'Baler 400' or the 'Siege of Baler' is famous because:", options: ["It was the first battle of the revolution.", "Spanish soldiers refused to believe the war was over and stayed in a church for nearly a year.", "It was where the Americans were defeated by the Japanese.", "It was where the first mass was held."], correct: 1, exp: "This event is now commemorated as Philippine-Spanish Friendship Day." },
+            { q: "Who was the American soldier who shot a Filipino at the San Juan Bridge, triggering the Philippine-American War?", options: ["Robert Grayson", "John J. Pershing", "George Dewey", "Arthur MacArthur"], correct: 0, exp: "The incident on February 4, 1899, officially started the hostilities." },
+            { q: "Which Filipino leader established the 'Republika ng Katagalugan' in the mountains of Rizal?", options: ["Miguel Malvar", "Macario Sakay", "Vicente Lukban", "Artemio Ricarte"], correct: 1, exp: "Sakay was branded a 'bandit' by the Americans but is now recognized as a patriot." },
+            { q: "The 'Bataan Death March' ended at which destination?", options: ["Fort Santiago", "Camp O'Donnell in Capas, Tarlac", "Corregidor Island", "Malinta Tunnel"], correct: 1, exp: "Prisoners were forced to walk over 100 kilometers under brutal conditions." },
+            { q: "Who was the founder of the Hukbalahap (Hukbo ng Bayan Laban sa Hapon)?", options: ["Luis Taruc", "Jose Laurel", "Benigno Ramos", "Jose Ma. Sison"], correct: 0, exp: "The Huks were a guerrilla movement that fought against the Japanese in Central Luzon." },
+            { q: "President Ramon Magsaysay was known as the 'Idol of the Masses.' What was his primary achievement?", options: ["Ending the Hukbalahap rebellion.", "Establishing the Central Bank.", "Moving the capital to Quezon City.", "Declaring Martial Law."], correct: 0, exp: "Through social reforms, he convinced many Huks to surrender." },
+            { q: "Which Philippine President changed the date of Independence Day from July 4 to June 12?", options: ["Manuel Roxas", "Diosdado Macapagal", "Elpidio Quirino", "Ferdinand Marcos"], correct: 1, exp: "Macapagal moved it in 1962 to honor Aguinaldo's 1898 declaration." },
+            { q: "The 1986 EDSA Revolution was sparked by the snap election and the defection of which two figures?", options: ["Ninoy Aquino and Jovito Salonga", "Juan Ponce Enrile and Fidel V. Ramos", "Cory Aquino and Salvador Laurel", "Gringo Honasan and Chavit Singson"], correct: 1, exp: "Their withdrawal of support for Marcos led to the peaceful uprising." },
+            { q: "Who was the first woman President of the Philippines?", options: ["Gloria Macapagal-Arroyo", "Corazon Aquino", "Imelda Marcos", "Miriam Defensor-Santiago"], correct: 1, exp: "She took office after the 1986 People Power Revolution." },
+            { q: "What is the name of the decree issued by Ferdinand Marcos in 1972 that declared Martial Law?", options: ["Proclamation 1081", "Proclamation 88", "Proclamation 1017", "Proclamation 217"], correct: 0, exp: "This led to a 14-year period of authoritarian rule." },
+            { q: "Which President is associated with the 'Philippines 2000' tiger economy program?", options: ["Joseph Estrada", "Fidel V. Ramos", "Gloria Arroyo", "Benigno Aquino III"], correct: 1, exp: "Ramos focused on deregulation, privatization, and economic stability." },
+            { q: "What was the name of the taxes paid by the natives during the Spanish era replaced by the 'Cedula'?", options: ["Bandala", "Tributo", "Polo y Servicio", "Diezmos Prediales"], correct: 1, exp: "The Tributo was a fixed tax paid in cash or kind to the Spanish government." },
+            { q: "The 'Encomienda System' was a grant from the King of Spain. What was the recipient called?", options: ["Alcaide Mayor", "Encomendero", "Gobernadorcillo", "Cabeza de Barangay"], correct: 1, exp: "The Encomendero was tasked to protect natives and provide religious education." },
+            { q: "Who was the 'Grand Old Man of Philippine Politics' and first President of the Third Republic?", options: ["Sergio Osmeña", "Manuel Roxas", "Elpidio Quirino", "Jose Laurel"], correct: 1, exp: "Roxas took office on July 4, 1946, when the US recognized independence." },
+            { q: "The 'La Liga Filipina' was founded by Jose Rizal in 1892. What was its main objective?", options: ["To start an armed revolution.", "To unite the archipelago into one compact body.", "To kill all the Spanish friars.", "To surrender the Philippines to the Americans."], correct: 1, exp: "It was a civic organization aimed at mutual protection and reform." },
+            { q: "Which ship brought Miguel Lopez de Legazpi to the Philippines in 1565?", options: ["Victoria", "San Pedro", "Trinidad", "Santa Maria"], correct: 1, exp: "Legazpi established the first permanent Spanish settlement in Cebu." },
+            { q: "What was the 'Tobacco Monopoly' established by Governor-General Jose Basco y Vargas?", options: ["Free tobacco for everyone.", "A control where only the government could buy and sell tobacco.", "A law banning the smoking of tobacco.", "A way to import tobacco from China."], correct: 1, exp: "It made the Philippines self-sufficient and independent of Mexican subsidies." },
+            { q: "The 'Martyrs of Cavite' (GOMBURZA) were executed using what method?", options: ["Firing Squad", "Garrote", "Hanging", "Decapitation"], correct: 1, exp: "The garrote is a machine that strangulates the victim with an iron collar." },
+            { q: "Who was the Sultan of Sulu who fought fiercely against Spanish colonization in Mindanao?", options: ["Sultan Kudarat", "Humabon", "Lapu-Lapu", "Sulayman"], correct: 0, exp: "Sultan Kudarat is a national hero for defending the Islamic faith." },
+            { q: "The 'Philippine Bill of 1902' is also known as the:", options: ["Jones Law", "Cooper Act", "Tydings-McDuffie Law", "Os-Rox Mission"], correct: 1, exp: "It provided for the creation of the Philippine Assembly and a Bill of Rights." },
+            { q: "What was the 'Hukbalahap' rebellion's main grievance?", options: ["Religious freedom.", "Agrarian/Land ownership issues and social justice.", "Separation from the US.", "Support for the Japanese."], correct: 1, exp: "Most members were peasants fighting against abusive landlords." },
+            { q: "Which First Lady is famous for her 'Edifice Complex' and the construction of the CCP?", options: ["Cory Aquino", "Imelda Marcos", "Ming Ramos", "Loi Ejercito"], correct: 1, exp: "She was known for large-scale infrastructure projects during the Marcos era." },
+            { q: "What was the 'Parity Rights' amendment in the 1946 Constitution?", options: ["Rights for Spaniards.", "Americans equal rights as Filipinos to exploit natural resources.", "Women's right to vote.", "Priests running for office."], correct: 1, exp: "This was a condition for receiving rehabilitation funds after WWII." },
+            { q: "The 'Kalayaan' was the official newspaper of the Katipunan. Who was its editor?", options: ["Andres Bonifacio", "Emilio Jacinto", "Pio Valenzuela", "Apolinario Mabini"], correct: 1, exp: "Jacinto used the pen name 'Pingkian' and spread revolutionary ideas." },
+            { q: "Who was the 'Great Plebeian' and the founder of the Katipunan?", options: ["Jose Rizal", "Andres Bonifacio", "Emilio Aguinaldo", "Marcelo H. Del Pilar"], correct: 1, exp: "Unlike the Ilustrados, Bonifacio came from a humble background." },
+            { q: "The 'Magdalo' and 'Magdiwang' were two rival factions of the Katipunan in which province?", options: ["Bulacan", "Cavite", "Laguna", "Batangas"], correct: 1, exp: "Their rivalry led to the Tejeros Convention and leadership splits." },
+            { q: "What event in 1872 is considered the 'beginning of Filipino Nationalism'?", options: ["The discovery of the Katipunan.", "The martyrdom of GOMBURZA.", "The arrival of Magellan.", "The Battle of Mactan."], correct: 1, exp: "Their death united Filipinos in grief and anger against Spain." }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 60;
+
+        function startQuiz() {
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById('quizProgress').innerText = `${currentIdx + 1} / ${questions.length}`;
+            document.getElementById('questionText').innerText = q.q;
+            
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = `${String.fromCharCode(65 + index)}. ${opt}`;
+                btn.onclick = () => selectOption(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('explanationBox').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timeLeft = 60;
+            document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    selectOption(-1); 
+                }
+            }, 1000);
+        }
+
+        function selectOption(index) {
+            clearInterval(timer);
+            const q = questions[currentIdx];
+            const options = document.querySelectorAll('.option-btn');
+            
+            options.forEach(btn => btn.disabled = true);
+            
+            if (index === q.correct) {
+                options[index].classList.add('correct');
+                score++;
+                document.getElementById('feedbackTitle').innerText = "Correct!";
+                document.getElementById('feedbackTitle').style.color = "#4CAF50";
+            } else {
+                if (index !== -1) options[index].classList.add('wrong');
+                options[q.correct].classList.add('correct');
+                document.getElementById('feedbackTitle').innerText = "Incorrect";
+                document.getElementById('feedbackTitle').style.color = "#f44336";
+            }
+            
+            document.getElementById('explanationText').innerText = q.exp;
+            document.getElementById('explanationBox').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentIdx++;
+            if (currentIdx < questions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quizPage').style.display = 'none';
+            document.getElementById('quizResultPage').classList.add('active');
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('maxScore').innerText = questions.length;
+            
+            const feedback = document.getElementById('resultFeedback');
+            const percentage = (score / questions.length) * 100;
+
+            if (percentage === 100) {
+                feedback.innerText = "Perfect Score! You're a History Master!";
+            } else if (percentage >= 80) {
+                feedback.innerText = "Excellent! You have a deep understanding of our history.";
+            } else if (percentage >= 50) {
+                feedback.innerText = "Good job! Review the facts to sharpen your knowledge.";
+            } else {
+                feedback.innerText = "Keep reviewing! Every hero started somewhere.";
+            }
+        }
+
+        startQuiz();
+    </script>
+</body>
+</html>
