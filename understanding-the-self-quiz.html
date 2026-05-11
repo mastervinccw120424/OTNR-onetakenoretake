@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashReview - Understanding the Self</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Quiz Page -->
+    <div id="quizPage" class="page active" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="dashboard-header" style="width: 100%; max-width: 800px; margin-bottom: 20px;">
+            <button class="btn-back" onclick="window.location.href='index.html'">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 style="font-size: 1.2rem; color: var(--text-muted);">Understanding the Self</h2>
+            <div class="quiz-timer" id="quizTimer">60s</div>
+            <div id="quizProgress" style="font-weight: 700; background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 15px;">1 / 50</div>
+        </div>
+
+        <div class="quiz-container">
+            <div class="quiz-question-box">
+                <h3 id="questionText">Loading question...</h3>
+            </div>
+
+            <div class="quiz-options" id="quizOptions">
+                <!-- Options inserted here -->
+            </div>
+
+            <div id="explanationBox" class="explanation-box" style="display: none;">
+                <strong id="feedbackTitle">Correct!</strong>
+                <p id="explanationText">Explanation goes here...</p>
+            </div>
+
+            <button id="nextBtn" class="btn-submit" style="display: none; margin-top: 10px;" onclick="nextQuestion()">
+                Next Question <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quiz Result Page -->
+    <div id="quizResultPage" class="page" style="display: flex; align-items: center; justify-content: center;">
+        <div class="result-container text-center">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <h2 id="resultTitle">FlashReview Completed!</h2>
+            <p class="result-score">Your Score: <span id="finalScore">0</span> / <span id="maxScore">50</span></p>
+            <div id="resultFeedback" class="mb-20">Great job! Keep reviewing.</div>
+            
+            <div class="topic-actions">
+                <button class="btn-action" onclick="window.location.href='index.html'">
+                    <i class="fas fa-home"></i> Home
+                </button>
+                <button class="btn-action secondary" onclick="location.reload()">
+                    <i class="fas fa-redo"></i> Restart FlashReview
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "Who is the philosopher famous for the dictum \"Cognito Ergo Sum\" (I think, therefore I am), asserting that the mind is the seat of the self?", options: ["Socrates", "René Descartes", "John Locke", "David Hume"], correct: 1, exp: "René Descartes viewed the self as a thinking entity distinct from the body." },
+            { q: "Which philosopher viewed the self as a \"Tabula Rasa\" or a blank slate, shaped entirely by experience and sensory perception?", options: ["Immanuel Kant", "St. Augustine", "John Locke", "Plato"], correct: 2, exp: "John Locke argued that identity is founded on consciousness and memory." },
+            { q: "According to David Hume, the \"self\" is nothing but a bundle or collection of different perceptions. This is known as the:", options: ["Bundle Theory", "Dualism", "Rationalism", "Idealism"], correct: 0, exp: "David Hume argued that there is no \"permanent\" self, only a stream of changing impressions." },
+            { q: "In Psychology, Sigmund Freud proposed that the self is composed of three layers. Which layer operates on the \"Pleasure Principle\"?", options: ["Ego", "Superego", "Id", "Conscience"], correct: 2, exp: "The Id seeks immediate gratification of all wants and needs." },
+            { q: "Which sociological concept by Charles Horton Cooley suggests that we see ourselves based on how we perceive others see us?", options: ["The Looking-Glass Self", "The Social Self", "The Generalized Other", "The I and the Me"], correct: 0, exp: "The Looking-Glass Self posits that our self-image is shaped by the reflections we see from people around us." },
+            { q: "George Herbert Mead’s theory of the social self distinguishes between the \"I\" and the \"Me.\" The \"Me\" represents:", options: ["The spontaneous and impulsive part of the self.", "The socialized aspect of the individual that internalizes society’s values.", "The physical body.", "The subconscious mind."], correct: 1, exp: "The \"Me\" is the social self, while the \"I\" is the response to that social self." },
+            { q: "In the context of the \"Digital Self,\" what refers to the version of ourselves that we choose to show to others on social media?", options: ["Actual Self", "Ideal Self", "Curated Self (or Online Identity)", "Spiritual Self"], correct: 2, exp: "Digital platforms allow users to selectively present traits to manage impressions." },
+            { q: "According to Albert Bandura, what is \"Self-Efficacy\"?", options: ["The belief in one’s ability to succeed in specific situations.", "The amount of love one has for oneself.", "The memory of one’s childhood.", "The fear of being judged by others."], correct: 0, exp: "Self-efficacy plays a major role in how goals, tasks, and challenges are approached." },
+            { q: "In Eastern Philosophy, which tradition emphasizes \"Anatta\" or the concept of \"No-Self\"?", options: ["Confucianism", "Taoism", "Buddhism", "Hinduism"], correct: 2, exp: "Buddhism teaches that the idea of a permanent, separate self is an illusion." },
+            { q: "Which philosopher synthesized the ideas of Descartes and Hume, arguing that the self organizes sensory impressions into a unified whole?", options: ["Maurice Merleau-Ponty", "Immanuel Kant", "Gilbert Ryle", "Paul Churchland"], correct: 1, exp: "Immanuel Kant proposed that the mind actively constructs the \"self.\"" },
+            { q: "What is the \"Physical Self\" primarily concerned with?", options: ["One’s thoughts and intelligence.", "The concrete and tangible aspect of the person that can be directly observed.", "One’s moral and ethical values.", "One’s connection to the divine."], correct: 1, exp: "The Physical Self includes body image, physical health, and self-esteem related to appearance." },
+            { q: "In the \"Johari Window\" model of self-awareness, the \"Blind Spot\" quadrant represents:", options: ["Things I know about myself and others know.", "Things I know about myself but others do not.", "Things others know about me but I do not know.", "Things neither I nor others know."], correct: 2, exp: "Self-awareness involves reducing the Blind Spot through feedback from others." },
+            { q: "Which psychologist introduced the \"Hierarchy of Needs,\" where the ultimate goal of the self is \"Self-Actualization\"?", options: ["Erik Erikson", "Carl Rogers", "Abraham Maslow", "Jean Piaget"], correct: 2, exp: "Abraham Maslow defined self-actualization as the fulfillment of one’s full potential." },
+            { q: "Carl Rogers’ theory of the self focuses on the gap between the \"Real Self\" and the \"Ideal Self.\" When these two are very similar, the person experiences:", options: ["Incongruence", "Congruence", "Cognitive Dissonance", "Neurosis"], correct: 1, exp: "Congruence leads to a greater sense of self-worth and a healthy life." },
+            { q: "What is \"Self-Esteem\"?", options: ["The knowledge of who you are.", "The subjective evaluation of your own worth.", "The ability to control others.", "The physical height of a person."], correct: 1, exp: "Self-esteem is the emotional appraisal or \"value\" we place on ourselves." }
+            ,
+            { q: "Which philosopher argued that the self is inseparable from the body, famously stating that the \"body is the opening toward the world\"?", options: ["Gilbert Ryle", "Maurice Merleau-Ponty", "Paul Churchland", "Immanuel Kant"], correct: 1, exp: "Merleau-Ponty rejected the mind-body dualism of Descartes. He argued that our \"lived body\" is our primary way of knowing the world; we do not just have a body, we are our body." },
+            { q: "Gilbert Ryle’s philosophy of \"Logical Behaviorism\" attacked the idea of a soul or mind separate from the body. He called this dualist mistake:", options: ["The Mirror of the Soul", "The Ghost in the Machine", "The Tabula Rasa", "The Divided Self"], correct: 1, exp: "Ryle argued that the mind is not a separate entity inside the body; rather, \"mind\" is simply a way to describe the collective actions and behaviors of a person." },
+            { q: "Which perspective on the self argues that the self is defined by the physical brain and that \"folk psychology\" (spirit/soul) will eventually be replaced by neuroscience?", options: ["Rationalism", "Eliminative Materialism", "Phenomenology", "Constructivism"], correct: 1, exp: "Paul and Patricia Churchland argue that the self is the brain. They believe that as science advances, terms like \"soul\" or \"mind\" will be replaced by neurobiological terms." },
+            { q: "In Erik Erikson’s Stages of Psychosocial Development, what is the primary conflict faced by adolescents (aged 12–18)?", options: ["Trust vs. Mistrust", "Autonomy vs. Shame", "Identity vs. Role Confusion", "Integrity vs. Despair"], correct: 2, exp: "During adolescence, individuals struggle to find their sense of self and their place in society. Failure to resolve this leads to confusion about who they are." },
+            { q: "According to William James, the self has two components: the \"I\" and the \"Me.\" The \"I\" is the self as the knower/subject, while the \"Me\" is:", options: ["The self as the object or the \"Empirical Self.\"", "The subconscious mind.", "The biological instincts.", "The religious soul."], correct: 0, exp: "For William James, the \"Me\" consists of the Material self (body/possessions), Social self (how others see us), and Spiritual self (inner dispositions)." },
+            { q: "In Western thought, the self is often seen as \"Individualistic.\" In contrast, Eastern thought (like Confucianism) views the self as:", options: ["Independent and autonomous.", "Relational and interdependent.", "Non-existent.", "Purely biological."], correct: 1, exp: "Eastern philosophy emphasizes Collectivism, where the self is defined by one's duties to family, society, and the community rather than individual desires." },
+            { q: "In the \"Johari Window,\" which quadrant contains information that is known to the self but hidden from others?", options: ["Open Area", "Blind Spot", "Hidden Area (Facade)", "Unknown Area"], correct: 2, exp: "The Hidden Area consists of secrets, private thoughts, and feelings that an individual chooses not to share with the public." },
+            { q: "According to St. Augustine, the self is a \"soul\" in a \"body.\" The goal of the self is to achieve a union with:", options: ["Nature", "The state", "God", "The inner child"], correct: 2, exp: "St. Augustine’s view is heavily theological; he believed that humans are restless until they find peace and truth in God." },
+            { q: "Which psychologist proposed that children progress through stages of \"Cognitive Development\" (Sensorimotor, Pre-operational, etc.) to build their sense of self and the world?", options: ["Lev Vygotsky", "Jean Piaget", "B.F. Skinner", "Carl Jung"], correct: 1, exp: "Jean Piaget focused on how the self's ability to think and reason matures as the brain develops and the child interacts with the environment." },
+            { q: "What is \"Self-Complexity\" in psychology?", options: ["Having a high IQ.", "Having many different \"versions\" of the self in different roles (e.g., student, daughter, athlete).", "Being a difficult person to understand.", "Having a split personality."], correct: 1, exp: "Higher self-complexity acts as a buffer against stress; if you fail in one role (e.g., a test), you still feel worthy because you have other successful roles (e.g., being a good friend)." },
+            { q: "In the context of the Sexual Self, what is the term for an individual's sense of being male, female, or another gender?", options: ["Sexual Orientation", "Gender Identity", "Gender Expression", "Biological Sex"], correct: 1, exp: "Gender Identity is one’s internal, deeply held sense of one’s own gender, which may or may not align with the sex assigned at birth." },
+            { q: "Which of the following is an example of the \"Material Self\" according to William James?", options: ["Your thoughts and feelings.", "Your reputation in school.", "Your clothes, body, and home.", "Your relationship with God."], correct: 2, exp: "The Material Self includes everything we call \"ours\"—our body, immediate family, and the property we worked hard to acquire." },
+            { q: "\"Self-Monitoring\" refers to:", options: ["Checking your pulse and health daily.", "The tendency to regulate one's behavior to meet the demands of social situations.", "Talking to yourself in the mirror.", "Keeping a diary of your dreams."], correct: 1, exp: "High self-monitors are \"social chameleons\" who change their behavior depending on who they are with to maintain a positive image." },
+            { q: "In \"Taoism,\" the self is best understood by:", options: ["Conquering others through strength.", "Accumulating as much wealth as possible.", "Living in harmony with the \"Tao\" (The Way of Nature).", "Following strict government laws."], correct: 2, exp: "Taoism emphasizes Wu Wei (non-action or effortless action) and finding the self by letting go of artificial social constructs." },
+            { q: "Which term describes the \"unrealistic\" version of yourself that you aspire to be, often influenced by media and society?", options: ["Real Self", "Ideal Self", "True Self", "False Self"], correct: 1, exp: "The Ideal Self is the person we would like to be. A large gap between the real self and the ideal self can lead to low self-esteem." },
+            { q: "In the theory of \"Multiple Intelligences,\" knowing one’s own strengths, weaknesses, and emotions is called:", options: ["Interpersonal Intelligence", "Intrapersonal Intelligence", "Linguistic Intelligence", "Existential Intelligence"], correct: 1, exp: "Intrapersonal Intelligence is the capacity to understand oneself, appreciate one’s feelings, and use that information to regulate one’s life." },
+            { q: "According to Freud, which part of the self serves as the \"Moral Arm,\" containing the conscience and ideals?", options: ["Id", "Ego", "Superego", "Libido"], correct: 2, exp: "The Superego internalizes the rules of parents and society, punishing the Ego with feelings of guilt when rules are broken." },
+            { q: "The \"Spiritual Self\" is not just about religion; it is also about:", options: ["How many church services you attend.", "The search for meaning, purpose, and connection to something bigger than oneself.", "Predicting the future.", "Mastering yoga poses."], correct: 1, exp: "The Spiritual Self involves the inner core of the person that seeks to answer \"Why am I here?\" and \"What is the meaning of my life?\"" },
+            { q: "In \"Socratic Philosophy,\" what is the most important task of the self?", options: ["To gain political power.", "To \"Know Thyself\" through constant questioning.", "To accumulate physical beauty.", "To die for one's country."], correct: 1, exp: "Socrates believed that \"The unexamined life is not worth living.\" Self-knowledge is the beginning of wisdom and virtue." },
+            { q: "What is \"Self-Regulation\"?", options: ["The ability to control one's emotions and impulses to achieve long-term goals.", "Following the rules set by the police.", "Having a strict diet.", "Never feeling angry."], correct: 0, exp: "Self-regulation involves managing \"short-term\" impulses (like wanting to sleep) to achieve \"long-term\" goals (like passing the LET)." },
+            { q: "\"Consumer Culture\" affects the self by:", options: ["Making people more religious.", "Linking self-identity and worth to the products and brands one consumes.", "Encouraging people to save more money.", "Protecting the environment."], correct: 1, exp: "In a consumerist society, people often feel that \"I am what I buy,\" using material possessions to signal status and identity." },
+            { q: "Which concept refers to the \"dark side\" of the digital self, where a person expresses things online that they wouldn't say in person?", options: ["Digital Literacy", "Online Disinhibition Effect", "Cyber-bullying", "Digital Footprint"], correct: 1, exp: "The Online Disinhibition Effect happens because of anonymity and the lack of face-to-face contact, leading people to be either extra mean or extra honest online." },
+            { q: "For Plato, the self or soul has three parts: The Rational, the Spirited, and the:", options: ["Emotional", "Appetitive", "Logical", "Physical"], correct: 1, exp: "The Appetitive part is responsible for basic desires like hunger, thirst, and sex. Plato argued the Rational part (reason) should rule the other two." },
+            { q: "\"Body Image\" refers to:", options: ["How much you weigh on a scale.", "The actual health of your internal organs.", "Your subjective perception and feelings about your physical appearance.", "The number of followers you have on Instagram."], correct: 2, exp: "Body Image is mental, not physical. A person can be physically fit but still have a negative body image." },
+            { q: "According to Carl Jung, the \"Persona\" is:", options: ["The dark, hidden side of the self.", "The \"mask\" or public face we wear to fit into society.", "The feminine side of a man.", "The total unity of the self."], correct: 1, exp: "The Persona is a social necessity that allows us to interact with others, but Jung warned not to mistake the mask for the True Self." },
+            { q: "In \"Confucianism,\" the goal of the self is to become a \"Junzi\" or a \"Noble Man\" by practicing \"Ren,\" which means:", options: ["Selfishness", "Human-heartedness or Benevolence", "Power through weapons", "Strict isolation"], correct: 1, exp: "Ren is the ultimate virtue in Confucianism, emphasizing that a person becomes a true \"self\" through loving and serving others." },
+            { q: "Which of the following defines \"Self-Handicapping\"?", options: ["Helping people with disabilities.", "Creating obstacles for yourself so you have an excuse if you fail.", "Working hard to overcome a weakness.", "Thinking you are better than everyone else."], correct: 1, exp: "Self-handicapping is a defense mechanism. For example, a student parties the night before a test so that if they fail, they can blame the party rather than their lack of intelligence." },
+            { q: "What is the \"Spotlight Effect\"?", options: ["Being a famous celebrity.", "Overestimating how much others notice our appearance or mistakes.", "Always wanting to be the center of attention.", "A type of stage fright."], correct: 1, exp: "Most people believe a \"spotlight\" is on them, but in reality, others are usually too busy thinking about themselves to notice your small flaws." },
+            { q: "According to the \"Social Comparison Theory,\" we evaluate ourselves by comparing ourselves to others. \"Upward Comparison\" usually leads to:", options: ["Increased self-esteem.", "Feelings of inferiority or inspiration to improve.", "Feeling superior to others.", "Forgetting who we are."], correct: 1, exp: "Upward Comparison (comparing yourself to someone \"better\") can either motivate you to work harder or make you feel inadequate." },
+            { q: "Which term refers to the \"True Self\" that is hidden behind the \"False Self\" (compliance with others' expectations), according to Donald Winnicott?", options: ["Actual Self", "Spontaneous and Creative Self", "The Social Mask", "The Shadow"], correct: 1, exp: "Winnicott argued that the True Self is the source of real creativity and feeling alive, whereas the False Self is a defensive exterior." },
+            { q: "In psychology, \"Self-Serving Bias\" is the tendency to:", options: ["Blame yourself for everything that goes wrong.", "Take credit for successes but blame external factors for failures.", "Help others only to get a reward.", "Treat yourself to a nice meal after work."], correct: 1, exp: "If you pass the LET, you say \"I am smart\" (internal). If you fail, you say \"The exam was unfair\" (external). This protects the self-esteem." },
+            { q: "\"Metacognition\" is an important aspect of the self in learning. It means:", options: ["Memorizing facts quickly.", "\"Thinking about thinking\" or being aware of your own learning processes.", "Using a computer to study.", "Studying for 10 hours straight."], correct: 1, exp: "Metacognition allows the self to monitor if they actually understand a topic and to change study strategies if they are not working." },
+            { q: "What does \"Self-Compassion\" involve?", options: ["Being lazy and making excuses.", "Treating yourself with the same kindness and understanding as you would a friend during times of failure.", "Thinking you are perfect.", "Feeling sorry for yourself all day."], correct: 1, exp: "Self-compassion involves mindfulness, common humanity (knowing everyone makes mistakes), and self-kindness instead of harsh self-criticism." },
+            { q: "\"Individualism\" is a cultural trait most common in:", options: ["Asian countries like Japan and China.", "Western countries like the USA and Western Europe.", "Indigenous tribes in the Amazon.", "Ancient Middle Eastern civilizations."], correct: 1, exp: "Individualism prioritizes personal goals and \"finding oneself,\" whereas collectivism prioritizes group harmony." },
+            { q: "Why is \"Understanding the Self\" a critical part of the LET and general education?", options: ["To make students memorize names of old philosophers.", "To help individuals become more self-aware, effective, and ethical citizens.", "To encourage everyone to become psychologists.", "To prove that the soul does not exist."], correct: 1, exp: "A person who understands their own biases, emotions, and identity is better equipped to handle the challenges of professional life and contribute to society." }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 60;
+
+        function startQuiz() {
+            for (let i = questions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [questions[i], questions[j]] = [questions[j], questions[i]];
+            }
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById('quizProgress').innerText = `${currentIdx + 1} / ${questions.length}`;
+            document.getElementById('questionText').innerText = q.q;
+            
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = `${String.fromCharCode(65 + index)}. ${opt}`;
+                btn.onclick = () => selectOption(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('explanationBox').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timeLeft = 60;
+            document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    selectOption(-1); 
+                }
+            }, 1000);
+        }
+
+        function selectOption(index) {
+            clearInterval(timer);
+            const q = questions[currentIdx];
+            const options = document.querySelectorAll('.option-btn');
+            
+            options.forEach(btn => btn.disabled = true);
+            
+            if (index === q.correct) {
+                options[index].classList.add('correct');
+                score++;
+                document.getElementById('feedbackTitle').innerText = "Correct!";
+                document.getElementById('feedbackTitle').style.color = "#4CAF50";
+            } else {
+                if (index !== -1) options[index].classList.add('wrong');
+                options[q.correct].classList.add('correct');
+                document.getElementById('feedbackTitle').innerText = "Incorrect";
+                document.getElementById('feedbackTitle').style.color = "#f44336";
+            }
+            
+            document.getElementById('explanationText').innerText = q.exp;
+            document.getElementById('explanationBox').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentIdx++;
+            if (currentIdx < questions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quizPage').style.display = 'none';
+            document.getElementById('quizResultPage').classList.add('active');
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('maxScore').innerText = questions.length;
+            const feedback = document.getElementById('resultFeedback');
+            if (score === 15) {
+                feedback.innerText = "Perfect Score! You really know yourself!";
+            } else if (score >= 12) {
+                feedback.innerText = "Excellent! You have a deep understanding of self-concepts.";
+            } else if (score >= 8) {
+                feedback.innerText = "Good job! Review the philosophical theories to improve.";
+            } else {
+                feedback.innerText = "Keep practicing! Self-awareness is a lifelong journey.";
+            }
+        }
+
+        startQuiz();
+    </script>
+</body>
+</html>
