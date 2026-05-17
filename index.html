@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ONE TAKE NO RETAKE - Review Companion</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+            50% { transform: translateY(-30px) rotate(10deg) scale(1.1); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes movingGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        @keyframes orbFloat {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(50px, -80px) scale(1.2); }
+            66% { transform: translate(-40px, 40px) scale(0.9); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.1; transform: scale(1); }
+            50% { opacity: 0.2; transform: scale(1.3); }
+        }
+        .landing-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+            background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0) 0%, #f8f9ff 100%);
+        }
+        .landing-glow-orb {
+            position: absolute;
+            width: clamp(300px, 40vw, 600px);
+            height: clamp(300px, 40vw, 600px);
+            border-radius: 50%;
+            filter: blur(100px);
+            animation: glowPulse 8s ease-in-out infinite, orbFloat 25s infinite ease-in-out;
+            opacity: 0.15;
+            mix-blend-mode: multiply;
+        }
+        #landingPage {
+            perspective: 1000px;
+            background: linear-gradient(-45deg, #ffffff, #f8f9ff, #f0f4ff, #ffffff);
+            background-size: 400% 400%;
+            animation: movingGradient 15s ease infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            overflow: hidden;
+        }
+        .landing-content {
+            position: relative;
+            z-index: 10;
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            background: #ffffff;
+            padding: clamp(60px, 10vw, 100px) clamp(24px, 5vw, 60px);
+            border-radius: 40px;
+            border: 1px solid rgba(139, 92, 246, 0.12);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+            transition: transform 0.1s ease-out;
+            transform-style: preserve-3d;
+            max-width: 650px;
+            width: 100%;
+            text-align: center;
+        }
+        .landing-title {
+            font-size: clamp(2.2rem, 7vw, 3.2rem) !important;
+            font-weight: 900;
+            color: var(--primary);
+            letter-spacing: -0.04em;
+            line-height: 1.1;
+            transform: translateZ(50px);
+            margin-bottom: 20px;
+        }
+        /* Social Review Styles */
+        .social-post-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 22px;
+            transition: var(--transition);
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.06);
+        }
+        .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .post-author { font-weight: 700; color: var(--primary); font-size: 0.95rem; }
+        .post-time { font-size: 0.8rem; color: var(--text-muted); }
+        .post-question { font-size: 1.05rem; line-height: 1.7; margin-bottom: 14px; color: var(--text-light); }
+        .post-ref { font-size: 0.85rem; color: var(--text-muted); background: #f8fafc; padding: 10px 14px; border-radius: 12px; border-left: 3px solid var(--primary); }
+        .post-actions { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 18px; border-top: 1px solid rgba(15, 23, 42, 0.08); padding-top: 16px; }
+        .action-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.95rem; }
+        .action-btn:hover { color: var(--primary); }
+        .action-btn.active { color: var(--primary); }
+        .report-btn:hover { color: var(--danger); }
+        
+        .comment-section { margin-top: 15px; padding-top: 10px; }
+        .comment-item { background: #f8fafc; padding: 14px; border-radius: 14px; margin-bottom: 12px; border-left: 3px solid rgba(109, 40, 217, 0.18); }
+        .reply-item { margin-left: 24px; margin-top: 10px; font-size: 0.95rem; border-left: 3px solid var(--primary); padding-left: 14px; background: #f8fafc; border-radius: 0 12px 12px 0; }
+        
+        .comment-input-group { display: flex; gap: 10px; margin-top: 12px; }
+        .comment-input { flex: 1; background: #f8fafc; border: 1px solid rgba(15,23,42,0.08); border-radius: 14px; color: var(--text-light); padding: 12px 14px; font-size: 0.95rem; }
+        
+        .reaction-badge {
+            background: var(--primary);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin-left: 4px;
+        }
+        /* Post Menu Styles */
+        .post-menu-container {
+            position: relative;
+        }
+        .post-menu-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 5px 10px;
+            font-size: 1.1rem;
+            transition: var(--transition);
+        }
+        .post-menu-btn:hover {
+            color: var(--primary);
+        }
+        .post-dropdown {
+            display: none;
+            position: absolute;
+            top: 30px;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            z-index: 100;
+            min-width: 130px;
+            overflow: hidden;
+        }
+        .post-dropdown.active {
+            display: block;
+        }
+        .post-dropdown-item {
+            width: 100%;
+            padding: 10px 16px;
+            text-align: left;
+            background: none;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.2s;
+        }
+        .post-dropdown-item:hover {
+            background: #f1f5f9;
+        }
+        .post-dropdown-item.delete {
+            color: var(--danger);
+        }
+
+        @keyframes admin-gold-glow {
+            0% { box-shadow: 0 10px 30px rgba(255, 215, 0, 0.15); border-color: #ffd700; }
+            50% { box-shadow: 0 10px 50px rgba(255, 215, 0, 0.4), 0 0 15px rgba(255, 215, 0, 0.2); border-color: #fff000; }
+            100% { box-shadow: 0 10px 30px rgba(255, 215, 0, 0.15); border-color: #ffd700; }
+        }
+
+        .admin-post-gold {
+            border: 2px solid #ffd700 !important;
+            background: linear-gradient(145deg, rgba(255, 215, 0, 0.15), var(--card-bg)) !important;
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.15) !important;
+            animation: admin-gold-glow 3.5s infinite ease-in-out;
+        }
+        .badge-major {
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        .admin-post-gold .badge-major {
+            background: #ffd700;
+            color: #000;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        .admin-post-gold .post-author {
+            color: #d4af37 !important;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
+        }
+
+        /* Badge for new questions/challenges */
+        .badge-new {
+            background: #ff4757;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            animation: pulse-red 2s infinite;
+            box-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+            z-index: 5;
+        }
+        @keyframes pulse-red {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        /* Enhanced Global Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(15, 15, 20, 0.95);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 12px;
+            z-index: 999999; /* Ensure it stays above everything */
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 15px rgba(168, 85, 247, 0.2);
+            border: 1px solid var(--primary);
+            font-weight: 600;
+            text-align: center;
+            min-width: 280px;
+            backdrop-filter: blur(10px);
+        }
+        .toast.active {
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast-success { border-color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
+        .toast-error { border-color: #ef4444; box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
+        .toast-info { border-color: #3b82f6; box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
+    </style>
+</head>
+<body>
+    <!-- Landing Page -->
+    <div id="landingPage" class="page active">
+        <div class="landing-background">
+            <div class="floating-element" style="top: 10%; left: 5%; animation-delay: 0s;">🎓</div>
+            <div class="floating-element" style="top: 20%; right: 10%; animation-delay: 1s;">📖</div>
+            <div class="floating-element" style="bottom: 15%; left: 15%; animation-delay: 2s;">🏆</div>
+            <div class="floating-element" style="bottom: 25%; right: 5%; animation-delay: 3s;">⭐</div>
+            <div class="floating-element" style="top: 45%; left: 2%; animation-delay: 4s;">✏️</div>
+            <div class="landing-glow-orb" style="top: -100px; left: -100px; background: var(--primary);"></div>
+            <div class="landing-glow-orb" style="bottom: -100px; right: -100px; background: #8b5cf6;"></div>
+            <div class="landing-glow-orb" style="top: 20%; right: -150px; background: #c084fc; animation-delay: -5s; width: 400px; height: 400px;"></div>
+            <div class="landing-glow-orb" style="bottom: 15%; left: -150px; background: #7c3aed; animation-delay: -2s; width: 450px; height: 450px;"></div>
+            <div class="landing-glow-orb" style="top: 50%; left: 50%; background: #6366f1; opacity: 0.08; width: 600px; height: 600px; transform: translate(-50%, -50%); animation: glowPulse 12s infinite alternate;"></div>
+            <div class="floating-element" style="top: 60%; left: 80%; animation-delay: 1.5s; font-size: 3rem;">⚡</div>
+            <div class="floating-element" style="top: 80%; left: 30%; animation-delay: 2.5s; font-size: 2rem;">🚀</div>
+        </div>
+        <div class="landing-container">
+            <div class="landing-content">
+                <h1 class="landing-title">ONE TAKE NO RETAKE</h1>
+                <p style="color: var(--text-muted); margin-bottom: 50px; font-size: 1.15rem; line-height: 1.7; max-width: 520px; margin-left: auto; margin-right: auto; transform: translateZ(20px);">
+                    The ultimate professional licensure exam review companion. Transform your study routine into a strategic path to success. Engineered for excellence.
+                </p>
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn-submit" onclick="window.location.href='auth.html'" style="min-width: 180px; height: 56px; border-radius: 16px; font-size: 1rem; box-shadow: 0 12px 24px rgba(139, 92, 246, 0.25);">Sign In</button>
+                    <button class="btn-submit" onclick="window.location.href='auth.html'" style="min-width: 180px; height: 56px; border-radius: 16px; font-size: 1rem; background: transparent; border: 2.5px solid var(--primary); color: var(--primary) !important;">Sign Up</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Selection Page -->
+    <div id="courseSelectionPage" class="page">
+        <div class="course-header">
+            <div style="flex: 1;"></div>
+            <h2 style="font-weight: 800; letter-spacing: -0.02em;">Dashboard</h2>
+            <div class="header-right-group">
+                <div class="notification-icon" onclick="openNotifications()" style="position: relative; cursor: pointer;">
+                    <i class="fas fa-bell"></i>
+                    <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
+                </div>
+                <div id="adminButton" style="display: none;">
+                    <button class="btn-settings" onclick="window.location.href='adminpanel.html'">
+                        <i class="fas fa-user-shield"></i>
+                    </button>
+                </div>
+                <div id="userDisplayName"></div>
+                <button class="btn-settings" onclick="openSettings()">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="course-container">
+            <div class="course-card" onclick="showPage('socialReviewPage')" style="border: 2px solid var(--info); background: linear-gradient(145deg, rgba(13, 202, 240, 0.1), rgba(13, 202, 240, 0.02)); cursor: pointer; position: relative; box-shadow: 0 8px 20px rgba(0,0,0,0.2); transition: transform 0.3s ease;">
+                <div class="plan-badge" style="top: 15px; right: 15px; background: var(--info); box-shadow: 0 4px 10px rgba(13, 202, 240, 0.3);">COMMUNITY</div>
+                <div class="course-icon" style="background: transparent; color: var(--info); font-size: 2.8rem; margin-bottom: 10px;">🤝</div>
+                <div class="course-info">
+                    <h3 style="color: var(--info); font-size: 1.4rem;">Social Review</h3>
+                    <p style="color: #000000;">Connect with other examinees. Ask questions, share insights, and learn together.</p>
+                    <div style="margin-top: 10px; font-size: 0.8rem; color: var(--info); font-weight: 600;"><i class="fas fa-globe"></i> LIVE FEED</div>
+                </div>
+            </div>
+            <div id="courseCardsContainer" style="display: contents;">
+                <!-- Dynamically populated by script-firebase-fixed.js -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Gen Ed Dashboard -->
+    <div id="genEdDashboard" class="page">
+        <div class="dashboard-header">
+            <button class="btn-back" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h2>General Education</h2>
+            <button class="btn-settings" onclick="openSettings()">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+
+        <div class="topics-container">
+            <div class="topic-card">
+                <div class="topic-icon">🇵🇭</div>
+                <h3>Philippine History</h3>
+                <p>Explore the rich history of the Philippines</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="window.location.href='philippine-history-quiz.html'">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+
+            <div class="topic-card">
+                <div class="topic-icon">🔬</div>
+                <h3>Science, Technology, and Society (STS)</h3>
+                <p>Understanding science and technology impacts</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="window.location.href='science-tech-society-quiz.html'">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+
+            <div class="topic-card">
+                <div class="topic-icon">⚖️</div>
+                <h3>Ethics</h3>
+                <p>Moral principles and ethical decision-making</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="window.location.href='ethics-quiz.html'">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+
+            <div class="topic-card">
+                <div class="topic-icon">🎨</div>
+                <h3>Art Appreciation</h3>
+                <p>Understanding and appreciating the arts</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="window.location.href='art-appreciation-quiz.html'">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+
+            <div class="topic-card">
+                <div class="topic-icon">🇵🇭</div>
+                <h3>Malayuning Komunikasyon sa Wikang Filipino</h3>
+                <p>Effective communication in Filipino</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="window.location.href='malayuning-komunikasyon-quiz.html'">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+
+            <div class="topic-card">
+                <div class="topic-icon">🗣️</div>
+                <h3>Purposive Communication</h3>
+                <p>Communicate with purpose and clarity</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="window.location.href='purposive-communication-quiz.html'">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+
+            <div class="topic-card">
+                <div class="topic-icon">🌍</div>
+                <h3>Contemporary World</h3>
+                <p>Current global issues and developments</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="window.location.href='contemporary-world-quiz.html'">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+
+            <div class="topic-card">
+                <div class="topic-icon">📖</div>
+                <h3>Life and Works of Rizal</h3>
+                <p>Study of national hero Dr. José Rizal</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="window.location.href='rizal-works-quiz.html'">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+
+            <div class="topic-card">
+                <div class="topic-icon">🧠</div>
+                <h3>Understanding the Self</h3>
+                <p>Personal development and self-awareness</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="window.location.href='understanding-the-self-quiz.html'">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+
+            <div class="topic-card">
+                <div class="topic-icon">🔢</div>
+                <h3>Mathematics</h3>
+                <p>Master fundamental math concepts and logic</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="window.location.href='gen-ed-math-quiz.html'">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Prof Ed Dashboard -->
+    <div id="profEdDashboard" class="page">
+        <div class="dashboard-header">
+            <button class="btn-back" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h2>Professional Education</h2>
+            <button class="btn-settings" onclick="openSettings()">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+
+        <div class="topics-container">
+            <div class="topic-card">
+                <div class="topic-icon">👨‍🏫</div>
+                <h3>The Teaching Profession</h3>
+                <p>Explore the role and responsibilities of teachers</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="window.location.href='teaching-profession-quiz.html'">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+
+            <div class="topic-card">
+                <div class="topic-icon">🎯</div>
+                <h3>Facilitating Learner-Centered Teaching</h3>
+                <p>Student-focused teaching strategies and methods</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="window.location.href='facilitating-learning-quiz.html'">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+
+            <div class="topic-card">
+                <div class="topic-icon">♿</div>
+                <h3>Special & Inclusive Education</h3>
+                <p>Teaching students with diverse learning needs</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="window.location.href='special-inclusive-edu-quiz.html'">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+
+            <div class="topic-card">
+                <div class="topic-icon">👶</div>
+                <h3>Child & Adolescent Learners</h3>
+                <p>Understanding child development and psychology</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="window.location.href='child-adolescent-quiz.html'">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+
+            <div class="topic-card">
+                <div class="topic-icon">📜</div>
+                <h3>Code of Ethics</h3>
+                <p>Professional standards and ethical guidelines for teachers</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="window.location.href='code-of-ethics-quiz.html'">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+
+            <div class="topic-card">
+                <div class="topic-icon">⚖️</div>
+                <h3>Laws in Education</h3>
+                <p>Legal mandates and educational laws in the Philippines</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="window.location.href='laws-in-education-quiz.html'">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz Page -->
+    <div id="quizPage" class="page">
+        <div class="dashboard-header">
+            <button class="btn-back" onclick="confirmExitQuiz()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="quiz-timer" id="quizTimer">60s</div>
+            <div id="quizProgress" style="font-weight: 600;">1/15</div>
+        </div>
+
+        <div class="quiz-container">
+            <div class="quiz-question-box">
+                <h3 id="questionText">Question goes here?</h3>
+            </div>
+
+            <div class="quiz-options" id="quizOptions">
+                <!-- Options will be generated here -->
+            </div>
+
+            <div id="explanationBox" class="explanation-box" style="display: none;">
+                <strong id="feedbackTitle">Correct!</strong>
+                <p id="explanationText">Explanation goes here...</p>
+            </div>
+
+            <button id="nextBtn" class="btn-submit" style="display: none; margin-top: 20px;" onclick="nextQuestion()">
+                Next Question <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quiz Result Page -->
+    <div id="quizResultPage" class="page">
+        <div class="result-container text-center">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <h2 id="resultTitle">FlashReview Completed!</h2>
+            <p class="result-score">Your Score: <span id="finalScore">0</span> / <span id="totalQuestions">0</span></p>
+            <div id="resultFeedback" class="mb-20">Great job! Keep reviewing.</div>
+            
+            <div class="topic-actions">
+                <button class="btn-action" onclick="showPage('courseSelectionPage')">
+                    <i class="fas fa-home"></i> Home
+                </button>
+                <button class="btn-action secondary" onclick="restartQuiz()">
+                    <i class="fas fa-redo"></i> Restart FlashReview
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Specialization Dashboard (Dynamic) -->
+    <div id="specializationDashboard" class="page">
+        <div class="dashboard-header">
+            <button class="btn-back" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h2 id="specializationTitle">Specialization</h2>
+            <button class="btn-settings" onclick="openSettings()">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+
+        <div class="topics-container">
+            <div class="topic-card majorship-card">
+                <div class="topic-icon">📝</div>
+                <h3>Major Comprehensive Review</h3>
+                <p>Practice questions specifically for your specialization.</p>
+                <div class="topic-actions">
+                    <button class="btn-action" onclick="takeQuiz('Major Specialization')">
+                        <i class="fas fa-chart-bar"></i> FlashReview
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Social Review Page -->
+    <div id="socialReviewPage" class="page">
+        <div class="dashboard-header">
+            <button class="btn-back" onclick="showPage('courseSelectionPage')">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h2>Global Social Review</h2>
+            <div style="width: 40px;"></div>
+        </div>
+
+            <div class="settings-section" style="max-width: 800px; margin: 20px auto; padding: 20px;">
+            <h3><i class="fas fa-pen-fancy"></i> Post a Review Question</h3>
+                <div class="input-group" style="margin-bottom: 10px;">
+                <textarea id="socialPostInput" placeholder="What is your question? (e.g., Which Article of the Code of Ethics...)" style="width: 100%; height: 80px; background: rgba(0,0,0,0.03); border-radius: 12px; color: var(--text-light); padding: 12px; border: 1px solid var(--card-border); resize: none;"></textarea>
+            </div>
+            <button class="btn-submit" onclick="submitSocialPost()" style="margin-top: 5px; width: auto; padding: 12px 30px;">
+                Post to Global Feed
+            </button>
+        </div>
+
+        <div id="socialFeed" style="max-width: 800px; margin: 0 auto; padding: 20px;">
+            <!-- Posts injected here -->
+            <div id="socialLoading" style="text-align: center; color: var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading Global Feed...</div>
+        </div>
+    </div>
+
+    <!-- Admin Challenge Page -->
+    <div id="adminChallengePage" class="page">
+        <div class="dashboard-header">
+            <button class="btn-back" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h2>🔥 Admin Challenge</h2>
+            <div style="width: 40px;"></div>
+        </div>
+
+        <div class="challenge-container" id="challengeContent">
+            <!-- Populated dynamically -->
+        </div>
+
+        <div id="challengeAnswersSection" class="settings-section" style="max-width: 600px; margin: 20px auto; padding: 20px; display: none;">
+            <h3><i class="fas fa-users"></i> Live Submissions</h3>
+            <div id="challengeAnswersList" style="max-height: 200px; overflow-y: auto; background: rgb(0, 0, 0); border-radius: 10px; padding: 15px; display: flex; flex-wrap: wrap; gap: 10px;">
+                <!-- Answers go here -->
+            </div>
+        </div>
+
+        <div class="settings-section" style="max-width: 600px; margin: 30px auto; padding: 20px;">
+            <h3><i class="fas fa-comments"></i> Discussion</h3>
+            <div id="challengeCommentsList" style="margin-bottom: 20px; max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 10px; padding: 10px;">
+                <!-- Comments go here -->
+            </div>
+            <div class="input-group">
+                <textarea id="challengeCommentInput" placeholder="Write a comment..." style="width: 100%; background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--primary); border-radius: 10px; padding: 10px; resize: none;"></textarea>
+                <button class="btn-submit" onclick="postChallengeComment()" style="margin-top: 10px;">Post Comment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Page -->
+    <div id="leaderboardPage" class="page">
+        <div class="dashboard-header">
+            <button class="btn-back" onclick="showPage('courseSelectionPage')">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h2>Global Leaderboard</h2>
+            <div style="width: 40px;"></div>
+        </div>
+
+        <div class="leaderboard-wrapper" style="width: 100%; display: flex; justify-content: center; padding: 20px;">
+            <div class="leaderboard-card" style="width: 100%; max-width: 1000px;">
+                <div class="leaderboard-top">
+                    <div>
+                        <h3 class="leaderboard-title">Leaderboard</h3>
+                        <p class="leaderboard-subtitle">Live usernames, Majors/Specializations, and website status. Auto-refreshes every 30 minutes.</p>
+                    </div>
+                    <div class="leaderboard-status-info">
+                        <span id="leaderboardTimer" class="leaderboard-timer">Refresh in 30:00</span>
+                        <span id="leaderboardLastUpdated" class="leaderboard-last-updated">Last updated just now</span>
+                    </div>
+                </div>
+                <div id="leaderboardList" class="leaderboard-custom-list">
+                    <div class="leaderboard-header">
+                        <span>Candidate Information</span>
+                        <span>Current Status</span>
+                        <span style="text-align: right;">Activity</span>
+                    </div>
+                    <div id="leaderboardItems"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Notifications Page -->
+    <div id="notificationsPage" class="page">
+        <div class="settings-header">
+            <button class="btn-back" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h2>🔔 Notifications</h2>
+            <button class="btn-settings" onclick="clearAllNotifications()" title="Clear all">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+        <div class="notifications-container">
+            <div id="notificationsList" class="notifications-list"></div>
+        </div>
+    </div>
+
+    <!-- Account Settings Page -->
+    <div id="accountSettingsPage" class="page">
+        <div class="settings-header">
+            <button class="btn-back" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h2>⚙️ Account Settings</h2>
+            <div style="width: 40px;"></div>
+        </div>
+
+        <div class="settings-container">
+            <div class="settings-section">
+                <h3><i class="fas fa-user-circle"></i> Profile Information</h3>
+                <div class="settings-item">
+                    <label>Full Name</label>
+                    <input type="text" id="displayFullName" placeholder="Loading...">
+                </div>
+                <div class="settings-item">
+                    <label>Username</label>
+                    <input type="text" id="displayUsername" placeholder="Loading...">
+                </div>
+                <div class="settings-item">
+                    <label>Email</label>
+                    <input type="email" id="displayEmail" disabled>
+                </div>
+                <div class="settings-item">
+                    <label>Major / Specialization</label>
+                    <input type="text" id="displayMajor" disabled>
+                </div>
+                <button class="btn-submit" onclick="updateProfileInfo()" style="margin-top: 10px;">
+                    Save Changes
+                </button>
+            </div>
+
+            <div class="settings-section">
+                <h3><i class="fas fa-sliders-h"></i> Preferences</h3>
+                <div class="settings-item toggle-item">
+                    <span><i class="fas fa-moon"></i> Dark Mode</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode(this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-item toggle-item" style="margin-top: 15px;">
+                    <span><i class="fas fa-volume-mute"></i> Mute Sounds</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="muteSoundsToggle" onchange="toggleMute(this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3><i class="fas fa-question-circle"></i> Support</h3>
+                <p onclick="showForgotPassword()" style="text-align: center; color: var(--primary); cursor: pointer; font-size: 0.95rem; margin-bottom: 20px; text-decoration: underline;">
+                    Reset Password via Gmail
+                </p>
+                <div class="settings-item">
+                    <label>Report a Problem</label>
+                    <textarea id="adminMessage" placeholder="Tell us what's wrong..." class="input-field" style="height: 100px; width: 100%; border-radius: 10px; padding: 10px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.1); resize: none;"></textarea>
+                </div>
+                <button class="btn-submit" onclick="sendToAdmin()">
+                    <i class="fas fa-paper-plane"></i> Contact Dev via Email
+                </button>
+            </div>
+
+            <div class="settings-section">
+                <h3>Session</h3>
+                <button class="btn-logout" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel Page -->
+    <div id="adminPanelPage" class="page">
+        <div class="dashboard-header">
+            <button class="btn-back" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <h2><i class="fas fa-user-shield"></i> Admin Panel</h2>
+            <div style="width: 40px;"></div>
+        </div>
+
+        <div class="admin-terminal-container">
+            <div id="terminalOutput" class="terminal-output"></div>
+            <div class="terminal-input-group">
+                <span class="terminal-prompt">></span>
+                <input type="text" id="adminCommandInput" class="terminal-input" placeholder="Enter command...">
+                <button class="btn-submit" onclick="processAdminCommand()">Execute</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+
+
+<script src="firebase-config.js"></script>
+<script src="script-firebase-fixed.js"></script>
+<script>
+    // Function to toggle password visibility
+    function togglePasswordVisibility(inputId, checkboxElement) {
+        const passwordInput = document.getElementById(inputId);
+        if (checkboxElement.checked) {
+            passwordInput.type = 'text';
+        } else {
+            passwordInput.type = 'password';
+        }
+    }
+
+    // Social Review Logic
+    async function submitSocialPost() {
+        const qInput = document.getElementById('socialPostInput');
+        const q = qInput.value.trim();
+        if (!q) return showToast("Please enter a question");
+        
+        const postButton = document.querySelector('#socialReviewPage .btn-submit');
+        postButton.disabled = true; // Disable button to prevent double-tap
+
+        try {
+            const user = firebase.auth().currentUser;
+            const major = (currentUser && currentUser.major) ? currentUser.major.toUpperCase() : "BEED"; // Default to BEED if major is not set
+            const refNum = Math.floor(10000 + Math.random() * 90000);
+            const autoRef = `#${refNum} | ${major}`;
+
+            await db.collection('social_posts').add({
+                authorId: user.uid,
+                authorName: (currentUser && currentUser.name) ? currentUser.name : "LPT Reviewer",
+                authorMajor: (currentUser && currentUser.major) ? currentUser.major : "General",
+                isAdminPost: (currentUser && currentUser.isAdmin) ? true : false,
+                question: q,
+                reference: autoRef,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                reactions: { likes: 0 },
+                reactedBy: [],
+                reportCount: 0,
+                comments: []
+            });
+            qInput.value = '';
+            showToast("Question posted globally!");
+        } catch (e) {
+            console.error(e);
+            showToast("Failed to post question.", "error");
+        } finally { postButton.disabled = false; } // Re-enable button
+    }
+
+    function initSocialFeed() {
+        db.collection('social_posts').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+            const container = document.getElementById('socialFeed');
+            const loading = document.getElementById('socialLoading');
+            if(loading) loading.style.display = 'none';
+            
+            let html = '';
+            snapshot.forEach(doc => {
+                const post = doc.data();
+                const id = doc.id;
+                const currentUserId = firebase.auth().currentUser?.uid;
+                const hasReacted = post.reactedBy?.includes(currentUserId);
+                const time = post.timestamp ? new Date(post.timestamp.seconds * 1000).toLocaleString() : "Just now";
+                
+                const isAdmin = post.isAdminPost === true;
+                const majorBadge = post.authorMajor ? `<span class="badge-major" style="font-size: 0.6rem; padding: 1px 6px;">${post.authorMajor.toUpperCase()}</span>` : '';
+                const adminClass = isAdmin ? 'admin-post-gold' : '';
+                const isAuthor = post.authorId === currentUserId;
+
+                // Calculate total interaction count (comments + nested replies)
+                const commentCount = (post.comments || []).length;
+                const totalReplies = (post.comments || []).reduce((acc, c) => acc + (c.replies ? c.replies.length : 0), 0);
+                const totalDiscussions = commentCount + totalReplies;
+
+                html += `
+                    <div class="social-post-card ${adminClass}">
+                        <div class="post-header">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-user-circle" style="font-size: 1.4rem; color: var(--primary);"></i>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span class="post-author" style="margin: 0; line-height: 1.2;">
+                                        @${post.authorName}
+                                        ${isAdmin ? '<i class="fas fa-check-circle" style="color: #ffd700; margin-left: 2px;" title="Verified Admin"></i>' : ''}
+                                    </span>
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <span class="post-time" style="font-size: 0.7rem;">${time}</span>
+                                        ${majorBadge}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="post-menu-container">
+                                <button class="post-menu-btn" onclick="togglePostDropdown('${id}')">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div id="dropdown-${id}" class="post-dropdown">
+                                    <button class="post-dropdown-item" onclick="showToast('Reposting functionality coming soon!', 'info')">
+                                        <i class="fas fa-retweet"></i> Repost
+                                    </button>
+                                    <button class="post-dropdown-item" onclick="reportSocialPost('${id}')">
+                                        <i class="fas fa-flag"></i> Report
+                                    </button>
+                                    ${isAuthor ? `
+                                        <button class="post-dropdown-item delete" onclick="deleteSocialPost('${id}')">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="post-question">${post.question}</div>
+                        <div class="post-ref"><i class="fas fa-link"></i> Ref: ${post.reference}</div>
+                        
+                        <div class="post-actions">
+                            <button class="action-btn ${hasReacted ? 'active' : ''}" ${hasReacted ? 'disabled' : ''} onclick="handleSocialReaction('${id}', 'likes')">
+                                <i class="fas fa-thumbs-up"></i> Helpful <span class="reaction-badge">${post.reactions?.likes || 0}</span>
+                            </button>
+                            <button class="action-btn" onclick="toggleComments('${id}')">
+                                <i class="fas fa-comment"></i> Discuss <span class="reaction-badge">${totalDiscussions}</span>
+                            </button>
+                        </div>
+
+                        <div id="comments-${id}" class="comment-section" style="display: none;">
+                            <div id="commentList-${id}">
+                                ${(post.comments || []).map((c, idx) => `
+                                    <div class="comment-item">
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                            <div>
+                                                <div style="font-weight: 600; font-size: 0.8rem; color: var(--primary);">@${c.author}</div>
+                                                <div style="color: var(--text-light);">${c.text}</div>
+                                            </div>
+                                            ${c.authorId === firebase.auth().currentUser?.uid ? `
+                                                <button class="action-btn" style="color: var(--danger); font-size: 0.7rem;" onclick="deleteComment('${id}', ${idx})">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            ` : ''}
+                                        </div>
+                                        <button class="action-btn" style="font-size: 0.7rem; margin-top: 5px;" onclick="showReplyInput('${id}', ${idx})">Reply</button>
+                                        <div id="replies-${id}-${idx}">
+                                            ${(c.replies || []).map((r, rIdx) => `
+                                                <div class="reply-item">
+                                                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                                        <div>
+                                                            <div style="font-weight: 600; color: var(--info);">@${r.author}</div>
+                                                            <div style="color: var(--text-light);">${r.text}</div>
+                                                        </div>
+                                                        ${r.authorId === firebase.auth().currentUser?.uid ? `
+                                                            <button class="action-btn" style="color: var(--danger); font-size: 0.7rem;" onclick="deleteReply('${id}', ${idx}, ${rIdx})">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        ` : ''}
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                        <div id="replyInput-${id}-${idx}" style="display:none;" class="comment-input-group">
+                                            <input type="text" class="comment-input" id="input-${id}-${idx}" placeholder="Write a reply...">
+                                            <button class="btn-submit" style="width: auto; padding: 5px 10px;" onclick="submitReply('${id}', ${idx})">Send</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="comment-input-group">
+                                <input type="text" id="mainComment-${id}" class="comment-input" placeholder="Join the discussion...">
+                                <button class="btn-submit" style="width: auto; padding: 5px 15px;" onclick="submitComment('${id}')">Send</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html || '<p style="text-align:center; color: var(--text-muted);">No questions posted yet. Be the first!</p>';
+        });
+    }
+
+    function togglePostDropdown(id) {
+        // Close all other dropdowns first
+        document.querySelectorAll('.post-dropdown').forEach(d => {
+            if (d.id !== `dropdown-${id}`) d.classList.remove('active');
+        });
+        const el = document.getElementById(`dropdown-${id}`);
+        if (el) el.classList.toggle('active');
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.post-menu-container')) {
+            document.querySelectorAll('.post-dropdown').forEach(d => d.classList.remove('active'));
+        }
+    });
+
+    async function deleteSocialPost(id) {
+        try {
+            await db.collection('social_posts').doc(id).delete();
+            showToast("Post deleted successfully.");
+        } catch(e) { console.error(e); }
+    }
+
+    function toggleComments(id) {
+        const div = document.getElementById(`comments-${id}`);
+        div.style.display = div.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function handleSocialReaction(id, type) {
+        const user = firebase.auth().currentUser;
+        if (!user) return;
+
+        const ref = db.collection('social_posts').doc(id);
+        const doc = await ref.get();
+        if (doc.exists) {
+            const data = doc.data();
+            const reactedBy = data.reactedBy || [];
+            if (reactedBy.includes(user.uid)) {
+                return; // 1 user 1 react only: stop processing if already reacted
+            }
+            await ref.update({ 
+                [`reactions.${type}`]: firebase.firestore.FieldValue.increment(1),
+                reactedBy: firebase.firestore.FieldValue.arrayUnion(user.uid)
+            });
+            showToast("Liked!");
+        }
+    }
+
+    async function submitComment(id) {
+        const input = document.getElementById(`mainComment-${id}`);
+        const text = input.value.trim();
+        if (!text) return;
+
+        const user = firebase.auth().currentUser;
+        if (!user) return showToast("Login required", "error");
+        const name = (currentUser && currentUser.name) ? currentUser.name : "LPT Reviewer";
+
+        try {
+            const ref = db.collection('social_posts').doc(id);
+            const doc = await ref.get();
+            if (!doc.exists) return;
+            const postData = doc.data();
+
+            await ref.update({
+                comments: firebase.firestore.FieldValue.arrayUnion({
+                    author: name,
+                    authorId: user.uid,
+                    text: text,
+                    replies: []
+                })
+            });
+            input.value = '';
+            showToast("Comment added!");
+
+            // Notify post author
+            if (postData.authorId && postData.authorId !== user.uid) {
+                const refId = Math.floor(1000 + Math.random() * 9000).toString();
+                await db.collection('notifications').add({
+                    message: `@${name} commented on your post: "${text.substring(0, 30)}${text.length > 30 ? '...' : ''}"`,
+                    createdAt: firebase.firestore.Timestamp.now(),
+                    readBy: [],
+                    isGlobal: false,
+                    userId: postData.authorId,
+                    refId: refId
+                });
+            }
+        } catch (e) {
+            console.error(e);
+            showToast("Failed to add comment", "error");
+        }
+    }
+
+    async function deleteComment(postId, commentIdx) {
+        if (!confirm("Are you sure you want to delete your comment?")) return;
+        try {
+            const ref = db.collection('social_posts').doc(postId);
+            const doc = await ref.get();
+            if (doc.exists) {
+                let comments = doc.data().comments || [];
+                if (comments[commentIdx] && comments[commentIdx].authorId === firebase.auth().currentUser?.uid) {
+                    comments.splice(commentIdx, 1);
+                    await ref.update({ comments: comments });
+                    showToast("Comment deleted.");
+                }
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function deleteReply(postId, commentIdx, replyIdx) {
+        if (!confirm("Are you sure you want to delete your reply?")) return;
+        try {
+            const ref = db.collection('social_posts').doc(postId);
+            const doc = await ref.get();
+            if (doc.exists) {
+                let comments = doc.data().comments || [];
+                if (comments[commentIdx] && comments[commentIdx].replies && comments[commentIdx].replies[replyIdx].authorId === firebase.auth().currentUser?.uid) {
+                    comments[commentIdx].replies.splice(replyIdx, 1);
+                    await ref.update({ comments: comments });
+                    showToast("Reply deleted.");
+                }
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function showReplyInput(postId, idx) {
+        const el = document.getElementById(`replyInput-${postId}-${idx}`);
+        el.style.display = el.style.display === 'none' ? 'flex' : 'none';
+    }
+
+    async function submitReply(postId, commentIdx) {
+        const input = document.getElementById(`input-${postId}-${commentIdx}`);
+        const text = input.value.trim();
+        if (!text) return;
+
+        const user = firebase.auth().currentUser;
+        if (!user) return showToast("Login required", "error");
+        const name = (currentUser && currentUser.name) ? currentUser.name : "LPT Reviewer";
+        
+        try {
+            const postRef = db.collection('social_posts').doc(postId);
+            const doc = await postRef.get();
+            if(doc.exists) {
+                let comments = doc.data().comments || [];
+                const parentComment = comments[commentIdx];
+                if(parentComment) {
+                    if(!parentComment.replies) parentComment.replies = [];
+                    parentComment.replies.push({ 
+                        author: name, 
+                        authorId: user.uid,
+                        text: text 
+                    });
+                    await postRef.update({ comments: comments });
+                    input.value = '';
+                    showToast("Reply sent!");
+
+                    // Notify comment author
+                    if (parentComment.authorId && parentComment.authorId !== user.uid) {
+                        const refId = Math.floor(1000 + Math.random() * 9000).toString();
+                        await db.collection('notifications').add({
+                            message: `@${name} replied to your comment: "${text.substring(0, 30)}${text.length > 30 ? '...' : ''}"`,
+                            createdAt: firebase.firestore.Timestamp.now(),
+                            readBy: [],
+                            isGlobal: false,
+                            userId: parentComment.authorId,
+                            refId: refId
+                        });
+                    }
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            showToast("Failed to send reply", "error");
+        }
+    }
+
+    async function reportSocialPost(id) {
+        if(confirm("Report this post for inappropriate content?")) {
+            await db.collection('social_posts').doc(id).update({ reportCount: firebase.firestore.FieldValue.increment(1) });
+            showToast("Report submitted. Thank you for keeping the community safe.");
+        }
+    }
+
+    // Ensure social feed is initialized when the page is shown
+    const originalShowPage = window.showPage;
+    window.showPage = function(pageId) {
+        if(pageId === 'socialReviewPage') initSocialFeed();
+        if(typeof originalShowPage === 'function') originalShowPage(pageId);
+    };
+</script>
+</body>
+</html>

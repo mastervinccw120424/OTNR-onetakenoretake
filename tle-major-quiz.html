@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashReview - TLE Majorship</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Quiz Page -->
+    <div id="quizPage" class="page active" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="dashboard-header" style="width: 100%; max-width: 800px; margin-bottom: 20px;">
+            <button class="btn-back" onclick="window.location.href='index.html'">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 style="font-size: 1.2rem; color: var(--text-muted);">TLE Majorship Comprehensive</h2>
+            <div class="quiz-timer" id="quizTimer">60s</div>
+            <div id="quizProgress" style="font-weight: 700; background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 15px;">1 / 60</div>
+        </div>
+
+        <div class="quiz-container">
+            <div class="quiz-question-box">
+                <h3 id="questionText">Loading question...</h3>
+            </div>
+
+            <div class="quiz-options" id="quizOptions">
+                <!-- Options inserted here -->
+            </div>
+
+            <div id="explanationBox" class="explanation-box" style="display: none;">
+                <strong id="feedbackTitle">Correct!</strong>
+                <p id="explanationText">Explanation goes here...</p>
+            </div>
+
+            <button id="nextBtn" class="btn-submit" style="display: none; margin-top: 10px;" onclick="nextQuestion()">
+                Next Question <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quiz Result Page -->
+    <div id="quizResultPage" class="page" style="display: flex; align-items: center; justify-content: center;">
+        <div class="result-container text-center">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <h2 id="resultTitle">FlashReview Completed!</h2>
+            <p class="result-score">Your Score: <span id="finalScore">0</span> / 60</p>
+            <div id="resultFeedback" class="mb-20">Excellent! Keep on reviewing.</div>
+            
+            <div class="topic-actions">
+                <button class="btn-action" onclick="window.location.href='index.html'">
+                    <i class="fas fa-home"></i> Home
+                </button>
+                <button class="btn-action secondary" onclick="location.reload()">
+                    <i class="fas fa-redo"></i> Restart FlashReview
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "In Cookery, what is the 'Danger Zone' temperature range where bacteria multiply most rapidly?", options: ["0°C to 4°C", "4°C to 60°C", "60°C to 100°C", "-18°C to 0°C"], correct: 1, exp: "Foods should not be left in the danger zone (4°C to 60°C) for more than two hours." },
+            { q: "Which type of kitchen knife is considered an all-purpose tool used for chopping, slicing, and mincing?", options: ["Paring Knife", "Serrated Knife", "Chef’s Knife (French Knife)", "Cleaver"], correct: 2, exp: "The Chef's knife is the most versatile and commonly used kitchen tool." },
+            { q: "In Carpentry, what tool is used to test the vertical and horizontal squareness of a surface?", options: ["Plumb Bob", "Try Square", "Level Bar", "Chalk Line"], correct: 1, exp: "A try square is essential for checking 90-degree squareness." },
+            { q: "What is the process of removing the internal organs of poultry called?", options: ["Scalding", "Evisceration", "Dressing", "Defeathering"], correct: 1, exp: "Evisceration is the step where internal organs are removed." },
+            { q: "In Electronics, what component is used to oppose the flow of electric current?", options: ["Capacitor", "Transistor", "Resistor", "Diode"], correct: 2, exp: "Resistors oppose current flow and are measured in Ohms." },
+            { q: "Which sewing machine part holds the fabric in place against the feed dog?", options: ["Bobbin Case", "Presser Foot", "Needle Bar", "Balance Wheel"], correct: 1, exp: "The presser foot holds fabric flat against the feed dog for stitching." },
+            { q: "In Agriculture, what is the process of transferring a seedling from a nursery tray to the permanent field?", options: ["Thinning", "Pruning", "Transplanting", "Grafting"], correct: 2, exp: "Transplanting involves moving a plant to its permanent growth site." },
+            { q: "Which type of fire extinguisher is specifically used for electrical fires (Class C)?", options: ["Water", "Carbon Dioxide (CO2) or Dry Chemical", "Foam", "Wet Chemical"], correct: 1, exp: "Non-conductive agents like CO2 must be used for electrical fires." },
+            { q: "In Beauty Care, what is the term for the white, half-moon shape at the base of the nail?", options: ["Cuticle", "Free Edge", "Lunula", "Matrix"], correct: 2, exp: "The lunula is the visible part of the nail matrix." },
+            { q: "What is the process of preserving food by using high concentrations of salt to draw out moisture?", options: ["Pickling", "Curing", "Fermentation", "Dehydration"], correct: 1, exp: "Curing uses salt or sugar to draw out moisture and preserve food." },
+            { q: "In ICT, what is the 'brain' of the computer that performs all processing tasks?", options: ["RAM", "Hard Drive", "Central Processing Unit (CPU)", "Motherboard"], correct: 2, exp: "The CPU is the primary processing unit of a computer." },
+            { q: "Which drafting tool is used for drawing horizontal lines and as a guide for triangles?", options: ["Protractor", "Compass", "T-Square", "French Curve"], correct: 2, exp: "T-squares provide accurate horizontal lines and support triangles." },
+            { q: "In Masonry, what is the ratio of cement, sand, and gravel for a Class A concrete mixture?", options: ["1:2:3", "1:2:4", "1:3:6", "1:1.5:3"], correct: 1, exp: "Class A concrete mixture uses a 1:2:4 ratio." },
+            { q: "What do you call the profit left after all expenses and taxes have been deducted from the total revenue?", options: ["Gross Profit", "Net Profit", "Capital", "Asset"], correct: 1, exp: "Net profit is the actual profit after all deductions." },
+            { q: "In Plumbing, what device is used to prevent sewer gases from entering the building while allowing waste to pass through?", options: ["Valve", "Coupling", "P-Trap", "Elbow"], correct: 2, exp: "The P-trap maintains a water seal that prevents gas entry." },
+            { q: "Which method of cooking involves submerging food in hot fat, usually oil?", options: ["Sautéing", "Braising", "Deep-frying", "Poaching"], correct: 2, exp: "Deep-frying involves complete immersion in hot fat." },
+            { q: "In Cosmetology, what is the study of the structure, functions, and diseases of the skin?", options: ["Trichology", "Dermatology", "Osteology", "Neurology"], correct: 1, exp: "Dermatology is the study of skin structure and health." },
+            { q: "What do you call a person who organizes, operates, and assumes the risk for a business venture?", options: ["Manager", "Employee", "Entrepreneur", "Investor"], correct: 2, exp: "Entrepreneurs take financial and operational risks." },
+            { q: "In Electrical House Wiring, what color of wire is standardly used for the 'Ground' wire?", options: ["Black", "Red", "Green or Yellow-Green", "Blue"], correct: 2, exp: "Green or yellow-green is the standard ground wire color." },
+            { q: "Which propagation method involves joining a scion (top part) with a rootstock?", options: ["Layering", "Marcotting", "Grafting", "Cutting"], correct: 2, exp: "Grafting joins parts of two plants to grow as one." },
+            { q: "In Graphic Design, what are the primary colors in the subtractive (CMYK) model used for printing?", options: ["Red, Green, Blue", "Cyan, Magenta, Yellow, Black", "Orange, Purple, Green", "White, Gray, Black"], correct: 1, exp: "CMYK is the standard subtractive color model for printing." },
+            { q: "Which stitch is used to provide a decorative finish to the edge of a blanket or thick fabric?", options: ["Running stitch", "Backstitch", "Blanket stitch", "Chain stitch"], correct: 2, exp: "Blanket stitch finishes edges of blankets or heavy fabric." },
+            { q: "In Animal Production, what is the term for a castrated male pig?", options: ["Boar", "Sow", "Gilt", "Barrow"], correct: 3, exp: "A barrow is a male pig castrated before maturity." },
+            { q: "What is the tool used to remove the insulation from electrical wires?", options: ["Side Cutting Pliers", "Long Nose Pliers", "Wire Stripper", "Utility Knife"], correct: 2, exp: "Wire strippers remove insulation without damaging conductors." },
+            { q: "In Food Processing, what is the term for heating food to a specific temperature to kill harmful microorganisms without changing the food's composition?", options: ["Sterilization", "Pasteurization", "Blanching", "Homogenization"], correct: 1, exp: "Pasteurization kills pathogens using mild, controlled heat." },
+            { q: "In Woodworking, which tool is used for driving and pulling out nails?", options: ["Ball Peen Hammer", "Claw Hammer", "Mallet", "Sledgehammer"], correct: 1, exp: "The claw hammer is designed with a flat striking face on one side and a curved, forked 'claw' on the other for removing nails." },
+            { q: "What is the primary function of a 'capacitor' in an electronic circuit?", options: ["To increase voltage", "To stop the flow of current", "To store electrical energy temporarily", "To convert AC to DC"], correct: 2, exp: "Capacitors store energy in an electric field and release it when needed, often used for filtering or timing." },
+            { q: "In Agriculture, what is the term for the process of removing excess plants to provide enough space for the remaining ones to grow healthy?", options: ["Pruning", "Cultivating", "Thinning", "Weeding"], correct: 2, exp: "Thinning reduces competition for nutrients, water, and sunlight among seedlings." },
+            { q: "Which type of stitch is considered the strongest hand stitch and is used to mimic a machine stitch?", options: ["Running stitch", "Backstitch", "Basting stitch", "Outline stitch"], correct: 1, exp: "The backstitch is doubled back on itself, making it very secure and durable for seams." },
+            { q: "In Food Processing, what is 'Blanching'?", options: ["Briefly plunging food into boiling water and then into ice water.", "Cooking food slowly in a small amount of liquid.", "Preserving food in a high-sugar solution.", "Smoke-drying meat to prevent spoilage."], correct: 0, exp: "Blanching stops enzyme actions that cause loss of flavor, color, and texture in vegetables." },
+            { q: "Which part of the business plan describes the target market and how the product will be promoted?", options: ["Financial Plan", "Production Plan", "Marketing Plan", "Organizational Plan"], correct: 2, exp: "The marketing plan outlines the '4 Ps' (Product, Price, Place, Promotion) to reach customers." },
+            { q: "In Plumbing, what is the standard slope for horizontal waste pipes to ensure proper drainage?", options: ["1% or 1/8 inch per foot", "2% or 1/4 inch per foot", "5% or 1/2 inch per foot", "10% or 1 inch per foot"], correct: 1, exp: "A 2% grade uses gravity effectively to move waste without leaving solids behind." },
+            { q: "In Drafting, what tool is used to draw irregular curves that cannot be made with a compass?", options: ["Protractor", "Divider", "French Curve", "T-Square"], correct: 2, exp: "French curves are templates used to guide the drawing of various non-circular mathematical curves." },
+            { q: "What is the term for a female chicken that is less than a year old and has not yet started laying eggs?", options: ["Hen", "Pullet", "Rooster", "Capon"], correct: 1, exp: "A pullet is a young female; once she begins laying eggs, she is referred to as a hen." },
+            { q: "In Beauty Care, what is the first step in a basic manicure service?", options: ["Applying nail polish", "Pushing the cuticle", "Sanitizing the hands", "Filing the nails"], correct: 2, exp: "Sanitation is always the priority in beauty services to prevent the spread of bacteria or fungi." },
+            { q: "In ICT, which protocol is used to transfer files between a local computer and a web server?", options: ["HTTP", "SMTP", "FTP", "IP"], correct: 2, exp: "File Transfer Protocol (FTP) is the standard network protocol used for the transfer of computer files." },
+            { q: "What is the tool used for marking very fine lines on wood or metal surfaces?", options: ["Pencil", "Chalk", "Scriber", "Crayon"], correct: 2, exp: "A scriber has a sharp metal point that etches a precise line into the material." },
+            { q: "In Electronics, what does the acronym 'LED' stand for?", options: ["Low Energy Diode", "Light Emitting Diode", "Liquid Electron Device", "Laser Energy Display"], correct: 1, exp: "LEDs are semiconductor devices that emit light when an electric current passes through them." },
+            { q: "Which cooking method uses dry heat and is usually done in an oven?", options: ["Steaming", "Boiling", "Baking", "Stewing"], correct: 2, exp: "Baking is a dry-heat cooking method, unlike steaming or boiling which use moisture." },
+            { q: "In Agriculture, what are 'Macro-nutrients' for plants?", options: ["Iron, Zinc, and Copper", "Nitrogen, Phosphorus, and Potassium", "Oxygen, Hydrogen, and Carbon", "Boron, Manganese, and Chlorine"], correct: 1, exp: "N-P-K are the primary nutrients required by plants in large quantities for growth." },
+            { q: "What sewing tool is used to protect the middle finger while pushing the needle through heavy fabric?", options: ["Needle Threader", "Seam Ripper", "Thimble", "Emery Bag"], correct: 2, exp: "A thimble prevents the eye-end of the needle from pricking the finger during hand sewing." },
+            { q: "In Cosmetology, what is 'Effleurage'?", options: ["A light, continuous stroking movement in massage.", "A deep kneading movement.", "A tapping or percussion movement.", "A vigorous shaking movement."], correct: 0, exp: "Effleurage is used to begin and end massage sessions to relax the muscles and soothe the client." },
+            { q: "What is the primary purpose of 'refrigeration' in food storage?", options: ["To kill all bacteria", "To slow down the growth of microorganisms", "To improve the flavor of food", "To cook the food slowly"], correct: 1, exp: "Cold temperatures inhibit the metabolic activity of bacteria but do not necessarily kill them." },
+            { q: "In Entrepreneurship, what does the 'S' in SWOT analysis stand for?", options: ["Sales", "Strategy", "Strengths", "Service"], correct: 2, exp: "SWOT stands for Strengths, Weaknesses, Opportunities, and Threats." },
+            { q: "Which electrical tool is used to test if a circuit is 'live' or has current?", options: ["Ohmmeter", "Ammeter", "Test Light / Voltage Tester", "Wattmeter"], correct: 2, exp: "A voltage tester or neon test light glows when it detects electrical pressure in a wire." },
+            { q: "In Masonry, what is the tool used for spreading mortar?", options: ["Float", "Edger", "Trowel", "Jointer"], correct: 2, exp: "The pointed metal blade of a trowel is specifically designed for picking up and spreading mortar." },
+            { q: "What do you call the process of heating milk to 72°C for 15 seconds to kill pathogens?", options: ["Homogenization", "Evaporation", "Pasteurization", "Condensation"], correct: 2, exp: "This specific 'HTST' (High Temperature Short Time) method is the standard for commercial pasteurization." },
+            { q: "In Carpentry, what is the term for a joint where the ends of two pieces are cut at 45 degrees to form a 90-degree corner?", options: ["Butt Joint", "Lap Joint", "Miter Joint", "Mortise and Tenon"], correct: 2, exp: "Miter joints are commonly used for picture frames and door casings." },
+            { q: "In ICT, which part of the computer stores data permanently even when the power is turned off?", options: ["RAM", "Hard Disk Drive (HDD)", "CPU", "Cache Memory"], correct: 1, exp: "RAM is volatile (temporary), while the Hard Drive is non-volatile (permanent) storage." },
+            { q: "In Animal Production, what is the term for the 'first milk' produced by a mother animal, which is rich in antibodies?", options: ["Whole milk", "Skim milk", "Colostrum", "Curd"], correct: 2, exp: "Colostrum is essential for providing passive immunity to newborn animals." },
+            { q: "Which drawing pencil grade is the softest and produces the darkest lines?", options: ["2H", "HB", "F", "6B"], correct: 3, exp: "In pencil grading, 'B' stands for blackness/softness; the higher the number, the softer and darker the lead." },
+            { q: "In Home Economics, what is the 'Work Triangle' in kitchen planning?", options: ["The path between the sink, stove, and refrigerator.", "The relationship between the cook, the server, and the diner.", "The space for preparation, cooking, and washing.", "The storage area for dry, cold, and frozen goods."], correct: 0, exp: "An efficient kitchen layout minimizes the steps between these three main work centers." },
+            { q: "What is the voltage standard for residential electrical outlets in the Philippines?", options: ["110V", "220V", "440V", "12V"], correct: 1, exp: "The Philippines uses 220-240 volts at 60Hz for standard domestic supply." },
+            { q: "In Agriculture, what is 'Marcotting'?", options: ["Joining a stem to a rootstock.", "Inducing a branch to grow roots while still attached to the parent plant.", "Planting seeds in a specialized tray.", "Cutting the roots of a plant to stunt growth."], correct: 1, exp: "Also known as air-layering, roots are encouraged to grow on a branch by stripping bark and applying moss/soil." },
+            { q: "Which type of accounts are the 'Assets' of a business?", options: ["Things the business owns (e.g., cash, equipment).", "Things the business owes (e.g., loans).", "The owner's personal savings.", "The total sales for the month."], correct: 0, exp: "Assets provide future economic value to the business." },
+            { q: "In Electronics, what is the function of a 'Diode'?", options: ["To store charge.", "To amplify signals.", "To allow current to flow in only one direction.", "To change resistance."], correct: 2, exp: "Diodes act as one-way valves, often used in rectifiers to turn AC into DC." },
+            { q: "Which measurement is taken from the shoulder tip to the other shoulder tip across the back?", options: ["Bust line", "Waistline", "Shoulder width", "Armhole circumference"], correct: 2, exp: "This is a horizontal measurement used in drafting patterns for shirts and dresses." },
+            { q: "In Plumbing, what is the tool used to clear clogs in pipes by rotating a flexible cable?", options: ["Plunger", "Plumber's Snake (Auger)", "Pipe Wrench", "Hacksaw"], correct: 1, exp: "An auger can reach deep into pipes to break up or pull out obstructions." },
+            { q: "In Food Processing, what does 'Homogenization' do to milk?", options: ["Kills bacteria.", "Breaks up fat globules so the cream does not separate.", "Removes the water content.", "Adds Vitamin D."], correct: 1, exp: "Homogenization is a mechanical process that ensures a uniform consistency in milk." },
+            { q: "In ICT, what does 'URL' stand for?", options: ["Universal Resource Locator", "Uniform Resource Locator", "Unified Radio Link", "Unique Record Line"], correct: 1, exp: "A URL is the specific web address used to identify a resource on the internet." }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 60;
+
+        function startQuiz() { showQuestion(); }
+
+        function showQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById('quizProgress').innerText = `${currentIdx + 1} / ${questions.length}`;
+            document.getElementById('questionText').innerText = q.q;
+            const container = document.getElementById('quizOptions');
+            container.innerHTML = '';
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = `${String.fromCharCode(65 + index)}. ${opt}`;
+                btn.onclick = () => selectOption(index);
+                container.appendChild(btn);
+            });
+            document.getElementById('explanationBox').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer); timeLeft = 60;
+            document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+            timer = setInterval(() => {
+                timeLeft--; document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) { clearInterval(timer); selectOption(-1); }
+            }, 1000);
+        }
+
+        function playSound(file) {
+            if (localStorage.getItem('isMuted') === 'true') return;
+            const audio = new Audio(file);
+            audio.play().catch(e => {});
+        }
+
+        function selectOption(index) {
+            clearInterval(timer);
+            const q = questions[currentIdx];
+            const options = document.querySelectorAll('.option-btn');
+            options.forEach(btn => btn.disabled = true);
+            if (index === q.correct) {
+                options[index].classList.add('correct'); score++;
+                document.getElementById('feedbackTitle').innerText = "Correct!";
+                document.getElementById('feedbackTitle').style.color = "#4CAF50";
+                playSound('correct.mp3');
+            } else {
+                if (index !== -1) options[index].classList.add('wrong');
+                options[q.correct].classList.add('correct');
+                document.getElementById('feedbackTitle').innerText = "Incorrect";
+                document.getElementById('feedbackTitle').style.color = "#f44336";
+                playSound('wrong.mp3');
+            }
+            document.getElementById('explanationText').innerText = q.exp;
+            document.getElementById('explanationBox').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentIdx++;
+            if (currentIdx < questions.length) showQuestion();
+            else showResults();
+        }
+
+        function showResults() {
+            document.getElementById('quizPage').style.display = 'none';
+            document.getElementById('quizResultPage').classList.add('active');
+            document.getElementById('finalScore').innerText = score;
+        }
+        startQuiz();
+    </script>
+</body>
+</html>

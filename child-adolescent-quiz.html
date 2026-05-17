@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashReview - Child & Adolescent Learners</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Quiz Page -->
+    <div id="quizPage" class="page active" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="dashboard-header" style="width: 100%; max-width: 800px; margin-bottom: 20px;">
+            <button class="btn-back" onclick="window.location.href='index.html'">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 style="font-size: 1.2rem; color: var(--text-muted);">Child & Adolescent Learners</h2>
+            <div class="quiz-timer" id="quizTimer">60s</div>
+            <div id="quizProgress" style="font-weight: 700; background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 15px;">1 / 50</div>
+        </div>
+
+        <div class="quiz-container">
+            <div class="quiz-question-box">
+                <h3 id="questionText">Loading question...</h3>
+            </div>
+
+            <div class="quiz-options" id="quizOptions">
+                <!-- Options inserted here -->
+            </div>
+
+            <div id="explanationBox" class="explanation-box" style="display: none;">
+                <strong id="feedbackTitle">Correct!</strong>
+                <p id="explanationText">Explanation goes here...</p>
+            </div>
+
+            <button id="nextBtn" class="btn-submit" style="display: none; margin-top: 10px;" onclick="nextQuestion()">
+                Next Question <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quiz Result Page -->
+    <div id="quizResultPage" class="page" style="display: flex; align-items: center; justify-content: center;">
+        <div class="result-container text-center">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <h2 id="resultTitle">FlashReview Completed!</h2>
+            <p class="result-score">Your Score: <span id="finalScore">0</span> / <span id="maxScore">50</span></p>
+            <div id="resultFeedback" class="mb-20">Great job! Keep reviewing.</div>
+            
+            <div class="topic-actions">
+                <button class="btn-action" onclick="window.location.href='index.html'">
+                    <i class="fas fa-home"></i> Home
+                </button>
+                <button class="btn-action secondary" onclick="location.reload()">
+                    <i class="fas fa-redo"></i> Restart FlashReview
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "Dr, Escoto, the school physician conducted a physical examination in Ms. Manuel’s class. What concept best describes the quantitative increase observed by Dr. Escoto among learners in terms of height and weight?", options: ["Development", "Growth", "Learning", "Maturation"], correct: 1, exp: "Growth refers to the quantitative physical changes in an individual such as height and weight." },
+            { q: "Which situation best illustrates the concept of growth?", options: ["A kinder pupil gains 2 pounds within two months.", "A high school student gets a score of 85 on a mental ability test.", "An education student has gained knowledge on approaches and strategies in teaching different subjects.", "An elementary grader has learned to play the piano."], correct: 0, exp: "Physical weight gain is a clear example of growth." },
+            { q: "Which statements below best describe development?", options: ["A high school student’s height increased by 5’2″ to 5’4″.", "A high school student’s change in weight from 110 lbs. to 125 lbs.", "A student had learned to operate a computer.", "A student’s enlargement of hips."], correct: 2, exp: "Development involves qualitative changes and the acquisition of skills, like learning to operate a computer." },
+            { q: "What concept can best describe Francisco’s ability to walk without support at 12 months because of the “internal ripening” that occurred in his muscles, bones, and nervous system development?", options: ["Development", "Growth", "Learning", "Maturation"], correct: 3, exp: "Maturation is the biological unfolding of the individual according to a genetic plan." },
+            { q: "Teacher Jesus is now 69 years old and has been observing changes in himself such as the aging process. Which term refers to the development change in the individual?", options: ["Development", "Growth", "Learning", "Maturation"], correct: 3, exp: "The aging process is part of biological maturation over the lifespan." },
+            { q: "Manuel, a five-year-old boy can hold his pen and write his name with his right hand. Which term describes Manuel’s action/behavior?", options: ["Development", "Growth", "Learning", "Maturation"], correct: 0, exp: "The emergence of fine motor skills for writing is a developmental milestone." },
+            { q: "Which of the following theory can help Miss Samson determine the readiness of her learners by administering a readiness test?", options: ["Conditioning Theories", "Cognitive Development Theory", "Maturation Theory", "Ethological Theory"], correct: 2, exp: "Maturation theory emphasizes that biological readiness is required before certain learning can take place." },
+            { q: "Mr. Francisco was very much worried about the thumb-sucking of his son. Who presented the notion that certain behavior like thumb-sucking is normal behavior?", options: ["Sigmund Freud", "Erick Ericson", "John Bowlly", "Urie Bronfenbrenner"], correct: 0, exp: "Freud's psychosexual theory identifies the oral stage where thumb-sucking is a common behavior." },
+            { q: "A newborn infant moves his whole body at one time, instead of moving a part of it. Which of the following principles is illustrated by his behavior?", options: ["Development proceeds from specific to general", "Development proceeds from general to specific", "Development follows an orderly pattern", "Development follows a general pattern"], correct: 1, exp: "Development typically moves from large, general movements to more refined, specific movements." },
+            { q: "Train up a child in the way he should be; when he grows up, he will not depart from it. Which principle supports this?", options: ["Development is determined by his heredity", "Development is determined by the environment", "Early development is more critical than the late development", "Early development is less critical than late development"], correct: 1, exp: "This emphasizes the significant impact of the environment and training during early years." },
+            { q: "Which state of the psycho-sexual theory do young boys experience rivalry with their father for their mother’s attention and affection?", options: ["Oral", "Anal", "Phallic", "Latency"], correct: 2, exp: "The Oedipus Complex occurs during the Phallic stage." },
+            { q: "Angela focuses her attention on the school work and vigorous play that consume most of her physical energy. Which stage of psychosexual theory illustrates her behavior?", options: ["Oral", "Anal", "Phallic", "Latency"], correct: 3, exp: "During Latency, sexual energy is redirected into intellectual and physical pursuits." },
+            { q: "Which of the following is likely to be developed if infants are shown genuine affection?", options: ["Trust", "Autonomy", "Initiative", "Industry"], correct: 0, exp: "Trust vs. Mistrust is Erikson's first stage; affection and consistent care foster trust." },
+            { q: "Christian develops an integral and coherent sense of self. He seeks answers to the question. “Who am I”? Which of the following is Christian likely to develop?", options: ["Initiative", "Identity and Role Confusion", "Intimacy", "Autonomy"], correct: 1, exp: "Adolescents seek to resolve the crisis of Identity vs. Role Confusion." },
+            { q: "Ms. Reyes uses images and language to represent and understand her various lessons to preschool learners. What stage in the cognitive theory of development explains this?", options: ["Sensorimotor", "Preoperational", "Concrete operation", "Formal operation"], correct: 1, exp: "In the Preoperational stage, children begin to use symbols, images, and language to represent the world." }
+            ,
+            { q: "A child is shown two identical glasses of juice. When the juice from one glass is poured into a taller, narrower glass, the child insists there is now more juice. What does this demonstrate?", options: ["Egocentrism", "Lack of conservation", "Irreversibility", "Animism"], correct: 1, exp: "Conservation is the understanding that quantity remains the same despite changes in shape. Children in the preoperational stage (ages 2–7) lack this ability." },
+            { q: "According to Piaget, what is the tendency of a child to only see the world from their own perspective and fail to realize that others may have different points of view?", options: ["Centration", "Narcissism", "Egocentrism", "Object Permanence"], correct: 2, exp: "Egocentrism is a hallmark of the preoperational stage where a child assumes everyone sees, hears, and feels exactly as they do." },
+            { q: "What is the main characteristic of the 'Sensorimotor Stage' of cognitive development?", options: ["Ability to solve abstract algebraic problems.", "Understanding the world through senses and motor actions.", "Use of logical reasoning about concrete objects.", "Development of a sense of right and wrong."], correct: 1, exp: "From birth to age 2, infants learn primarily through their physical interactions with the environment." },
+            { q: "Which Eriksonian stage is associated with middle childhood (elementary years) where children strive to master skills and complete tasks?", options: ["Trust vs. Mistrust", "Autonomy vs. Shame", "Industry vs. Inferiority", "Generativity vs. Stagnation"], correct: 2, exp: "School-age children need to experience success in schoolwork to develop a sense of competence (Industry); otherwise, they feel inadequate." },
+            { q: "According to Vygotsky, what is the term for the range of tasks that are too difficult for a child to master alone but can be learned with guidance?", options: ["Scaffolding", "Cognitive Apprenticeship", "Zone of Proximal Development (ZPD)", "Private Speech"], correct: 2, exp: "ZPD is the distance between actual development and potential development with the help of a 'More Knowledgeable Other.'" },
+            { q: "In Kohlberg’s theory of moral development, an individual who acts based on universal ethical principles and human rights is at what level?", options: ["Pre-conventional", "Conventional", "Post-conventional", "Non-conventional"], correct: 2, exp: "Post-conventional morality moves beyond blindly following laws to following self-chosen ethical principles." },
+            { q: "Which of the following describes the 'Proximodistal' pattern of development?", options: ["Development from head to foot.", "Development from the center of the body outward to the extremities.", "Development from the simple to the complex.", "Development from the specific to the general."], correct: 1, exp: "Proximo (near/center) to distal (far/limbs). This is why infants can control their trunks before their fingers." },
+            { q: "What is the 'Cephalocaudal' principle of development?", options: ["Development proceeds from the center of the body to the limbs.", "Development proceeds from the head downward to the tail/feet.", "Development is a continuous process.", "Development is influenced by culture."], correct: 1, exp: "Cephalo (head) to caudal (tail). This explains why a baby's head is disproportionately large and why they control their neck before they can walk." },
+            { q: "In Freud’s Psychosexual stages, what follows the Phallic stage?", options: ["Oral", "Anal", "Latency", "Genital"], correct: 2, exp: "Latency (ages 6–12) is a period of 'calm' where sexual energy is redirected into social and intellectual activities." },
+            { q: "Which of the following refers to the biological changes that occur during adolescence leading to sexual maturity?", options: ["Menarche", "Spermarche", "Puberty", "Adulthood"], correct: 2, exp: "Puberty is the overall biological process of physical and sexual maturation." },
+            { q: "According to Bronfenbrenner’s Ecological Systems Theory, the system that involves the immediate environment (family, school, peers) is the:", options: ["Microsystem", "Mesosystem", "Exosystem", "Macrosystem"], correct: 0, exp: "The Microsystem consists of the direct interactions and settings the child inhabits daily." },
+            { q: "Which system in Bronfenbrenner’s theory refers to the linkages between microsystems, such as a child’s parent meeting with their teacher?", options: ["Microsystem", "Mesosystem", "Exosystem", "Macrosystem"], correct: 1, exp: "The Mesosystem is the connection between two or more environments (e.g., home and school)." },
+            { q: "What is the term for the realization that objects continue to exist even when they cannot be seen, heard, or touched?", options: ["Conservation", "Reversibility", "Object Permanence", "Transductive reasoning"], correct: 2, exp: "This is a major achievement in the sensorimotor stage, usually occurring around 8–10 months." },
+            { q: "A teenager refuses to go to school because she has a small pimple, believing that 'everyone will be staring at it.' This is an example of:", options: ["Personal Fable", "Imaginary Audience", "Formal Logic", "Metacognition"], correct: 1, exp: "Adolescents often feel they are constantly being watched or judged by others." },
+            { q: "The 'Personal Fable' in adolescence is characterized by a belief in:", options: ["One's own unique and invincible nature.", "The importance of following social rules.", "The idea that everyone is watching them.", "The ability to solve any math problem."], correct: 0, exp: "Personal Fable is the belief that 'my feelings are unique' and 'it can't happen to me,' often leading to risky behavior." },
+            { q: "In Erikson's theory, if a toddler is constantly restricted or punished for exploring, they may develop:", options: ["Mistrust", "Guilt", "Shame and Doubt", "Inferiority"], correct: 2, exp: "During the second stage (Autonomy vs. Shame), children need freedom to explore within safe boundaries." },
+            { q: "Which of the following is the correct order of Piaget’s cognitive stages?", options: ["Preoperational, Sensorimotor, Concrete, Formal", "Sensorimotor, Preoperational, Concrete, Formal", "Sensorimotor, Concrete, Preoperational, Formal", "Formal, Concrete, Preoperational, Sensorimotor"], correct: 1, exp: "S-P-C-F is the acronym to remember (Sensorimotor, Preoperational, Concrete, Formal)." },
+            { q: "What is 'Animism' in the preoperational stage?", options: ["The belief that inanimate objects have lifelike qualities and feelings.", "The ability to categorize animals.", "The fear of wild animals.", "Drawing animals in art class."], correct: 0, exp: "Children may think a doll is 'hurt' or the sun is 'hiding' because it's sad." },
+            { q: "According to Kohlberg, at the 'Conventional' level, people make moral decisions based on:", options: ["Avoiding punishment.", "Self-interest and rewards.", "Social order, laws, and the approval of others.", "Abstract universal principles."], correct: 2, exp: "Conventional morality focuses on being a 'good boy/girl' and maintaining social harmony through laws." },
+            { q: "Which of the following refers to a child’s ability to 'think about their own thinking'?", options: ["Cognition", "Metacognition", "Assimilation", "Accommodation"], correct: 1, exp: "Metacognition involves self-monitoring and awareness of one's learning strategies." },
+            { q: " 'Nature' in development refers to _______, while 'Nurture' refers to _______.", options: ["Environment; Heredity", "Heredity; Environment", "Growth; Development", "Learning; Maturation"], correct: 1, exp: "Nature is biological/genetic; Nurture is social/environmental influence." },
+            { q: "Which theorist emphasized the role of 'More Knowledgeable Others' (MKO) in social learning?", options: ["Jean Piaget", "Lev Vygotsky", "B.F. Skinner", "Lawrence Kohlberg"], correct: 1, exp: "Vygotsky believed social interaction is fundamental to cognitive development." },
+            { q: "What is the conflict in Erikson’s stage for young adulthood (ages 20–40)?", options: ["Identity vs. Role Confusion", "Intimacy vs. Isolation", "Generativity vs. Stagnation", "Integrity vs. Despair"], correct: 1, exp: "The primary focus is on forming close, committed relationships with others." },
+            { q: "A child who can think logically about 'hands-on' problems but struggles with abstract/hypothetical concepts is in which stage?", options: ["Sensorimotor", "Preoperational", "Concrete Operational", "Formal Operational"], correct: 2, exp: "Concrete Operational children (ages 7–11) need physical examples to use logic effectively." },
+            { q: "In Freud’s theory, which part of the personality operates on the 'Pleasure Principle'?", options: ["Id", "Ego", "Superego", "Alter Ego"], correct: 0, exp: "The Id is the primitive, impulsive part of personality that demands immediate gratification." },
+            { q: "The Ego operates on the _______ principle.", options: ["Pleasure", "Moral", "Reality", "Action"], correct: 2, exp: "The Ego mediates between the Id and Superego, trying to find realistic ways to satisfy desires." },
+            { q: "Which stage of prenatal development is the most critical period where major organs begin to form?", options: ["Germinal", "Embryonic", "Fetal", "Zygotic"], correct: 1, exp: "The embryonic period (weeks 2–8) is when the foundations for all systems are laid down." },
+            { q: "Which type of play is characterized by children playing with similar toys side-by-side but not interacting?", options: ["Solitary Play", "Parallel Play", "Associative Play", "Cooperative Play"], correct: 1, exp: "Common in toddlers; they enjoy being near peers without playing 'with' them yet." },
+            { q: "What is 'Centration'?", options: ["Focusing on only one aspect of a situation while ignoring others.", "Being the center of attention.", "The ability to center objects in space.", "Meditating to find focus."], correct: 0, exp: "This causes the lack of conservation (e.g., focusing only on the height of a liquid, not the width)." },
+            { q: "According to Baumrind, which parenting style is demanding but also warm and responsive?", options: ["Authoritarian", "Authoritative", "Permissive", "Neglectful"], correct: 1, exp: "Authoritative parenting yields the most self-reliant and socially competent children." },
+            { q: "Which of the following is an example of a 'fine motor skill'?", options: ["Running a marathon.", "Jumping over a hurdle.", "Zipping up a jacket.", "Kicking a ball."], correct: 2, exp: "Fine motor skills involve small muscle groups, usually in the hands and fingers." },
+            { q: "According to Gardner, a child who is highly aware of their own feelings and goals has high _______ intelligence.", options: ["Interpersonal", "Intrapersonal", "Linguistic", "Existential"], correct: 1, exp: "Intrapersonal means 'within the self.'" },
+            { q: "In Vygotsky's theory, 'Scaffolding' means:", options: ["Leaving the child to learn completely alone.", "Providing temporary support that is gradually removed.", "Building a physical structure.", "Punishing incorrect answers."], correct: 1, exp: "Support is tailored to the learner's current level and faded out as they become competent." },
+            { q: "Which of the following is the final stage of Erikson’s psychosocial development?", options: ["Generativity vs. Stagnation", "Intimacy vs. Isolation", "Integrity vs. Despair", "Identity vs. Role Confusion"], correct: 2, exp: "Occurs in late adulthood; the individual reflects on life with either satisfaction or regret." },
+            { q: "What does the term 'Tabula Rasa' (John Locke) mean?", options: ["Children are born with innate knowledge.", "Children are born as 'blank slates' shaped by experience.", "Children are naturally evil.", "Children develop in fixed biological stages."], correct: 1, exp: "Locke believed that the environment and experience are the sole authors of a child's mind." }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 60;
+
+        function startQuiz() {
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById('quizProgress').innerText = `${currentIdx + 1} / ${questions.length}`;
+            document.getElementById('questionText').innerText = q.q;
+            
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = `${String.fromCharCode(65 + index)}. ${opt}`;
+                btn.onclick = () => selectOption(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('explanationBox').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timeLeft = 60;
+            document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    selectOption(-1); 
+                }
+            }, 1000);
+        }
+
+        function playSound(file) {
+            if (localStorage.getItem('isMuted') === 'true') return;
+            const audio = new Audio(file);
+            audio.play().catch(e => {});
+        }
+
+        function selectOption(index) {
+            clearInterval(timer);
+            const q = questions[currentIdx];
+            const options = document.querySelectorAll('.option-btn');
+            
+            options.forEach(btn => btn.disabled = true);
+            
+            if (index === q.correct) {
+                options[index].classList.add('correct');
+                score++;
+                document.getElementById('feedbackTitle').innerText = "Correct!";
+                document.getElementById('feedbackTitle').style.color = "#4CAF50";
+                playSound('correct.mp3');
+            } else {
+                if (index !== -1) options[index].classList.add('wrong');
+                options[q.correct].classList.add('correct');
+                document.getElementById('feedbackTitle').innerText = "Incorrect";
+                document.getElementById('feedbackTitle').style.color = "#f44336";
+                playSound('wrong.mp3');
+            }
+            
+            document.getElementById('explanationText').innerText = q.exp;
+            document.getElementById('explanationBox').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentIdx++;
+            if (currentIdx < questions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quizPage').style.display = 'none';
+            document.getElementById('quizResultPage').classList.add('active');
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('maxScore').innerText = questions.length;
+            
+            const feedback = document.getElementById('resultFeedback');
+            const percentage = (score / questions.length) * 100;
+
+            if (percentage === 100) {
+                feedback.innerText = "Perfect Score! You're a Child Development Specialist!";
+            } else if (percentage >= 80) {
+                feedback.innerText = "Outstanding! You really understand your learners.";
+            } else if (percentage >= 50) {
+                feedback.innerText = "Good job! Review the theories to master the nuances.";
+            } else {
+                feedback.innerText = "Keep reviewing! Understanding development is key to effective teaching.";
+            }
+        }
+
+        startQuiz();
+    </script>
+</body>
+</html>
