@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashReview - The Teaching Profession</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <style>
+        body { background: var(--bg); color: var(--text-light); font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .quiz-container { 
+            background: var(--card-bg); 
+            border-radius: 24px; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); 
+            padding: 48px; 
+            max-width: 800px !important;
+            border: 2px solid var(--card-border);
+        }
+        .quiz-timer {
+            background: var(--primary);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-family: monospace;
+            box-shadow: 0 4px 6px rgba(var(--primary-rgb), 0.2);
+        }
+        .option-btn {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            padding: 18px 24px;
+            font-weight: 600;
+            color: var(--text-light);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 1.05rem;
+        }
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: var(--bg);
+            transform: translateX(4px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .option-btn.correct { background: var(--success) !important; border-color: var(--success) !important; color: white !important; }
+        .option-btn.wrong { background: var(--danger) !important; border-color: var(--danger) !important; color: white !important; }
+        .explanation-box {
+            background: rgba(var(--primary-rgb), 0.05);
+            border-radius: 16px;
+            padding: 24px;
+            border-left: 6px solid var(--primary);
+            margin-top: 20px;
+            animation: slideInUp 0.4s ease-out;
+        }
+        @keyframes slideInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+    <div id="quizPage" class="page active" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="dashboard-header" style="width: 100%; max-width: 700px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
+            <button class="btn-back" onclick="window.location.href='index.html'"> 
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 style="font-size: 1.1rem; font-weight: 600; color: var(--text-muted);">The Teaching Profession</h2>
+            <div class="quiz-timer" id="quizTimer">60s</div>
+            <div id="quizProgress" style="font-weight: 600; color: #4f46e5; font-size: 0.9rem;"></div>
+        </div>
+
+        <div class="quiz-container">
+            <div class="quiz-question-box">
+                <h3 id="questionText">Loading question...</h3>
+            </div>
+
+            <div class="quiz-options" id="quizOptions">
+                <!-- Options will be dynamically inserted here -->
+            </div>
+
+            <div id="explanationBox" class="explanation-box" style="display: none;">
+                <strong id="feedbackTitle">Correct!</strong>
+                <p id="explanationText">Explanation goes here...</p>
+            </div>
+
+            <button id="nextBtn" class="btn-submit" style="display: none; margin-top: 10px;" onclick="nextQuestion()">
+                Next Question <i class="fas fa-arrow-right"></i> 
+            </button>
+        </div>
+    </div>
+
+    <!-- Quiz Result Page -->
+    <div id="quizResultPage" class="page" style="display: flex; align-items: center; justify-content: center;">
+        <div class="result-container text-center">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <h2 id="resultTitle">FlashReview Completed!</h2>
+            <p class="result-score">Your Score: <span id="finalScore">0</span> / <span id="totalQuestions">0</span></p>
+            <div id="resultFeedback" class="mb-20">Great job! Keep reviewing.</div>
+            
+            <div class="topic-actions">
+                <button class="btn-action" onclick="window.location.href='index.html'"> <!-- Keep btn-action for primary action -->
+                    <i class="fas fa-home"></i> Home 
+                </button>
+                <button class="btn-action secondary" onclick="location.reload()"> <!-- Keep btn-action secondary for secondary action -->
+                    <i class="fas fa-redo"></i> Restart FlashReview 
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "Which of the following describes the teacher's role as a facilitator of learning?", options: ["Dispenser of knowledge", "Manager of the classroom", "Guide in the learning process", "Authority figure"], correct: 2, exp: "As a facilitator, the teacher guides students to discover knowledge themselves." },
+            { q: "The Magna Carta for Public School Teachers is also known as:", options: ["RA 4670", "RA 7836", "RA 9155", "RA 10533"], correct: 0, exp: "RA 4670 is the Magna Carta for Public School Teachers." },
+            { q: "Which pillar of learning emphasizes learning to live together in peace and harmony?", options: ["Learning to know", "Learning to do", "Learning to be", "Learning to live together"], correct: 3, exp: "Learning to live together focuses on social cohesion and peace." },
+            { q: "What is the primary goal of the K-12 program?", options: ["Global competitiveness", "Tertiary education preparation", "Employment readiness", "Holistic development"], correct: 3, exp: "K-12 aims for the holistic development of learners." },
+            { q: "A teacher who has a professional license but does not practice is considered:", options: ["Professional", "Non-practicing professional", "Inactive", "Licensed"], correct: 0, exp: "Professional status is based on the license, regardless of current practice." },
+            { q: "The 'Child-Friendly School System' is an initiative of:", options: ["UNESCO", "UNICEF", "WHO", "ASEAN"], correct: 1, exp: "UNICEF promotes the Child-Friendly School System." },
+            { q: "Which philosophy emphasizes that 'education is life, not just preparation for life'?", options: ["Essentialism", "Progressivism", "Perennialism", "Existentialism"], correct: 1, exp: "John Dewey, a progressivist, famously stated this." },
+            { q: "In the code of ethics, who is the 'backbone of the educational system'?", options: ["Students", "Parents", "Teachers", "Administrators"], correct: 2, exp: "Teachers are considered the backbone of the system." },
+            { q: "What is the minimum requirement for a person to be a professional teacher in the Philippines?", options: ["Master's Degree", "Passing the LET", "Teaching experience", "Doctoral Degree"], correct: 1, exp: "Passing the Licensure Examination for Teachers (LET) is required by RA 7836." },
+            { q: "Which type of curriculum is actually taught by the teacher?", options: ["Recommended", "Written", "Taught", "Supported"], correct: 2, exp: "The taught curriculum refers to what is delivered in the classroom." },
+            { q: "Who is the proponent of the Multiple Intelligences theory?", options: ["Jean Piaget", "Howard Gardner", "Lev Vygotsky", "Erik Erikson"], correct: 1, exp: "Howard Gardner proposed Multiple Intelligences." },
+            { q: "The 'hidden curriculum' refers to:", options: ["Secret lessons", "Unintended learning outcomes", "Advanced topics", "Private tutoring"], correct: 1, exp: "Hidden curriculum includes norms and values learned implicitly." },
+            { q: "Which assessment is done at the end of a unit or term?", options: ["Formative", "Diagnostic", "Summative", "Placement"], correct: 2, exp: "Summative assessment evaluates learning at the end of an instructional period." },
+            { q: "A teacher rewards students with stickers for good behavior. This is an example of:", options: ["Classical conditioning", "Operant conditioning", "Social learning", "Constructivism"], correct: 1, exp: "B.F. Skinner's operant conditioning involves reinforcement." },
+            { q: "What does PQF stand for?", options: ["Philippine Quality Framework", "Philippine Qualifications Framework", "Professional Quality Forum", "Philippine Quarter Fund"], correct: 1, exp: "PQF is the Philippine Qualifications Framework." },
+            { q: "Which philosophy believes that teachers should teach only the 'essentials' like reading, writing, and arithmetic?", options: ["Essentialism", "Progressivism", "Social Reconstructionism", "Existentialism"], correct: 0, exp: "Essentialism focuses on traditional academic rigor and the '3 Rs.'" },
+            { q: "Which of Piaget’s stages is characterized by the child's ability to think logically about concrete objects and events?", options: ["Sensorimotor", "Pre-operational", "Concrete Operational", "Formal Operational"], correct: 2, exp: "Occurs roughly from ages 7 to 11." },
+            { q: "According to Erikson, what is the primary psychosocial conflict during adolescence?", options: ["Trust vs. Mistrust", "Autonomy vs. Shame", "Identity vs. Role Confusion", "Initiative vs. Guilt"], correct: 2, exp: "Teenagers struggle to find their place and identity in society." },
+            { q: "In Vygotsky’s theory, what is the term for the distance between what a learner can do alone and what they can do with help?", options: ["Scaffolding", "Zone of Proximal Development (ZPD)", "Social Speech", "Schema"], correct: 1, exp: "ZPD is where the most effective learning occurs." },
+            { q: "What is the primary focus of 'Social Reconstructionism'?", options: ["Individual growth", "Maintaining traditions", "Solving social problems and improving society", "Acquiring skills for a job"], correct: 2, exp: "Reconstructionists believe schools should be leaders in social change." },
+            { q: "Which level of Bloom's Taxonomy (Revised) involves breaking information into parts to explore understandings and relationships?", options: ["Understanding", "Applying", "Analyzing", "Evaluating"], correct: 2, exp: "Analyzing involves distinguishing between parts of a whole." },
+            { q: "This law, passed in 2013, expanded the basic education to include Kindergarten and two additional years of high school.", options: ["RA 7722", "RA 10533", "RA 9155", "RA 7836"], correct: 1, exp: "RA 10533 is the Enhanced Basic Education Act of 2013." },
+            { q: "Which philosophy emphasizes that 'existence precedes essence' and that individuals must create their own meaning?", options: ["Realism", "Idealism", "Existentialism", "Perennialism"], correct: 2, exp: "Existentialism focuses on individual freedom and responsibility." },
+            { q: "In the classroom, 'Scaffolding' refers to:", options: ["The physical structure of the school.", "Temporary support provided to a student to help them master a task.", "The punishment given to misbehaving students.", "The final exam given at the end of the year."], correct: 1, exp: "Support is gradually removed as the student becomes independent." },
+            { q: "Which type of test is used to predict a student's future performance or success in a specific area?", options: ["Achievement Test", "Aptitude Test", "Diagnostic Test", "Summative Test"], correct: 1, exp: "Aptitude tests measure potential ability." },
+            { q: "What is the 'Spiral Progression' approach in the K-12 curriculum?", options: ["Teaching the same topic at increasing levels of complexity across grade levels.", "Teaching all subjects in one day.", "Focusing only on vocational skills.", "Moving from abstract concepts to concrete examples."], correct: 0, exp: "Spiral progression revisits topics with increasing depth." },
+            { q: "In 'Classical Conditioning', what was the bell in Pavlov's experiment before conditioning took place?", options: ["Unconditioned Stimulus", "Conditioned Stimulus", "Neutral Stimulus", "Conditioned Response"], correct: 2, exp: "Before association, the bell is a neutral stimulus." },
+            { q: "Which law created the Commission on Higher Education (CHED)?", options: ["RA 7722", "RA 7796", "RA 9155", "RA 4670"], correct: 0, exp: "RA 7722 is the Higher Education Act of 1994." },
+            { q: "A teacher uses a 'Rating Scale' to evaluate a student's oral presentation. This is an example of what kind of assessment?", options: ["Traditional", "Performance-based", "Objective", "Standardized"], correct: 1, exp: "Performance-based assessment evaluates actual tasks." },
+            { q: "Which curriculum refers to the materials, textbooks, and facilities that help in the delivery of instruction?", options: ["Written Curriculum", "Supported Curriculum", "Assessed Curriculum", "Hidden Curriculum"], correct: 1, exp: "Supported curriculum includes resources that aid teaching." },
+            { q: "Who is the 'Father of Modern Psychology' who established the first psychology laboratory?", options: ["Sigmund Freud", "Wilhelm Wundt", "B.F. Skinner", "Ivan Pavlov"], correct: 1, exp: "Wilhelm Wundt established the first lab in Leipzig, 1879." },
+            { q: "What is the main characteristic of 'Perennialism'?", options: ["Focus on student interests.", "Focus on vocational training.", "Focus on unchanging truths and the 'Great Books.'", "Focus on social activism."], correct: 2, exp: "Perennialists believe in teaching everlasting truths." },
+            { q: "In the '3-Domain' view of learning objectives (Bloom), what refers to the domain of physical skills and coordination?", options: ["Cognitive", "Affective", "Psychomotor", "Effective"], correct: 2, exp: "Psychomotor refers to physical/manual skills." },
+            { q: " 'Standard Deviation' in a test score distribution is a measure of:", options: ["Central Tendency", "Reliability", "Variability (Spread of scores)", "Difficulty"], correct: 2, exp: "Standard deviation measures how scores spread from the mean." },
+            { q: "Which pillar of learning focuses on acquiring the tools of understanding?", options: ["Learning to do", "Learning to know", "Learning to live together", "Learning to be"], correct: 1, exp: "Learning to know focuses on mastering knowledge tools." },
+            { q: "The 'Table of Specifications' (TOS) is primarily used to ensure:", options: ["Student attendance", "Content validity of a test", "Teacher's salary", "Classroom cleanliness"], correct: 1, exp: "TOS ensures the test matches the taught objectives." },
+            { q: "According to Kohlberg, in which level of moral development do individuals act based on avoiding punishment?", options: ["Pre-conventional", "Conventional", "Post-conventional", "Non-conventional"], correct: 0, exp: "Pre-conventional logic is based on self-interest and punishment." },
+            { q: "Which type of parenting style is characterized by high expectations but also high responsiveness and warmth?", options: ["Authoritarian", "Authoritative", "Permissive", "Neglectful"], correct: 1, exp: "Authoritative is the most effective parenting style." },
+            { q: " 'Metacognition' is best described as:", options: ["Memorizing facts.", "Thinking about one's own thinking.", "Socializing with peers.", "Reading aloud."], correct: 1, exp: "Metacognition is awareness and control of one's learning." },
+            { q: "Which role of the teacher is emphasized when they coordinate with parents and the community?", options: ["Instructional Leader", "Community Link", "Classroom Manager", "Counselor"], correct: 1, exp: "Teachers serve as a bridge between the school and community." },
+            { q: "What is the IQ range of a 'gifted' individual according to standard tests?", options: ["70-85", "90-110", "Above 130", "Below 20"], correct: 2, exp: "An IQ score above 130 is typically considered gifted." },
+            { q: "Which assessment occurs when students evaluate their own work?", options: ["Peer-assessment", "Self-assessment", "Summative assessment", "Standardized assessment"], correct: 1, exp: "Self-assessment promotes student reflection." },
+            { q: "The 'Learner-Centered' philosophy is most closely associated with:", options: ["Realism", "Essentialism", "Constructivism", "Perennialism"], correct: 2, exp: "Constructivism emphasizes the learner's active role." },
+            { q: "What does 'RA 9155' primarily address?", options: ["Professionalization of teachers.", "Higher education standards.", "Governance of basic education (School-Based Management).", "Rights of persons with disabilities."], correct: 2, exp: "RA 9155 is the Governance of Basic Education Act of 2001." },
+            { q: "Which of the following is an example of an 'Affective' objective?", options: ["To identify the parts of a leaf.", "To solve a math equation.", "To show appreciation for national heroes.", "To perform a folk dance."], correct: 2, exp: "Affective objectives deal with attitudes and values." },
+            { q: "In a 'Normal Distribution' (Bell Curve), most of the scores are found in the:", options: ["Extreme left", "Extreme right", "Middle", "Top and bottom"], correct: 2, exp: "The majority of scores cluster around the mean in the middle." },
+            { q: "Which teacher's behavior demonstrates 'Professionalism' according to the Code of Ethics?", options: ["Gossiping about colleagues.", "Accepting expensive gifts from parents for high grades.", "Continuous professional growth through graduate studies.", "Using classroom time for personal business."], correct: 2, exp: "Professionalism includes ongoing growth and ethical conduct." },
+            { q: "What is the term for a teacher who is 'new' or a 'beginner' in the field?", options: ["Expert", "Proficient", "Novice", "Distinguished"], correct: 2, exp: "Novice is the entry-level stage of teacher development." },
+            { q: "Which of the following is a 'Reliable' test?", options: ["A test that measures what it is supposed to measure.", "A test that yields consistent results over time.", "A test that is very easy for all students.", "A test that is very long."], correct: 1, exp: "Reliability is the consistency of test scores." },
+            { q: "The 'Holistic' view of a child means seeing the learner as:", options: ["Just a brain to be filled.", "A future worker only.", "A whole person (physical, emotional, social, and mental).", "A source of data for the school."], correct: 2, exp: "Holism considers all aspects of human development." }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 60;
+        let totalTimeUsed = 0;
+        let currentUser = null;
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                currentUser = {
+                    uid: user.uid,
+                    name: user.displayName || user.email.split('@')[0],
+                    major: 'General'
+                };
+            } else { window.location.href = 'index.html'; }
+        });
+
+        function startQuiz() {
+            // Shuffle questions
+            for (let i = questions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [questions[i], questions[j]] = [questions[j], questions[i]];
+            }
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById('quizProgress').innerText = `${currentIdx + 1} / ${questions.length}`;
+            document.getElementById('questionText').innerText = q.q;
+            
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = `${String.fromCharCode(65 + index)}. ${opt}`;
+                btn.onclick = () => selectOption(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('explanationBox').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timeLeft = 60;
+            document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    selectOption(-1); 
+                }
+            }, 1000);
+        }
+
+        function playSound(file) {
+            if (localStorage.getItem('isMuted') === 'true') return;
+            const audio = new Audio(file);
+            audio.play().catch(e => {});
+        }
+
+        function selectOption(index) {
+            clearInterval(timer);
+            const timeSpent = 60 - timeLeft;
+            totalTimeUsed += timeSpent;
+            const q = questions[currentIdx];
+            const options = document.querySelectorAll('.option-btn');
+            
+            options.forEach(btn => btn.disabled = true);
+            
+            if (index === q.correct) {
+                options[index].classList.add('correct');
+                score++;
+                document.getElementById('feedbackTitle').innerText = "Correct!";
+                document.getElementById('feedbackTitle').style.color = "#4CAF50";
+                playSound('correct.mp3');
+            } else {
+                if (index !== -1) options[index].classList.add('wrong');
+                options[q.correct].classList.add('correct');
+                document.getElementById('feedbackTitle').innerText = "Incorrect";
+                document.getElementById('feedbackTitle').style.color = "#f44336";
+                playSound('wrong.mp3');
+            }
+            
+            document.getElementById('explanationText').innerText = q.exp;
+            document.getElementById('explanationBox').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentIdx++;
+            if (currentIdx < questions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        async function saveResult(timeSpent) {
+            if (!currentUser) return;
+            try {
+                const userRef = db.collection('leaderboard').doc(currentUser.uid);
+                await userRef.set({
+                    name: currentUser.name,
+                    major: currentUser.major,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+                    totalTimeSpent: firebase.firestore.FieldValue.increment(Math.ceil(timeSpent / 60))
+                }, { merge: true });
+            } catch (e) { console.error(e); }
+        }
+
+        function showResults() {
+            document.getElementById('quizPage').classList.remove('active');
+            document.getElementById('quizPage').style.display = 'none';
+            document.getElementById('quizResultPage').classList.add('active');
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('totalQuestions').innerText = questions.length;
+            
+            saveResult(totalTimeUsed);
+            const feedback = document.getElementById('resultFeedback');
+            const percentage = Math.round((score / questions.length) * 100);
+
+            if (percentage >= 75) {
+                feedback.innerText = "Passed! Excellent performance! Your passion for teaching shows.";
+            } else {
+                feedback.innerText = "Failed! Keep practicing! Review the explanations to better understand the profession.";
+            }
+        }
+
+        startQuiz();
+    </script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashReview - Science Majorship</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <!-- Quiz Page -->
+    <div id="quizPage" class="page active" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="dashboard-header" style="width: 100%; max-width: 800px; margin-bottom: 20px;">
+            <button class="btn-back" onclick="window.location.href='index.html'"> 
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 style="font-size: 1.2rem; color: var(--text-muted);">Science Majorship Comprehensive</h2>
+            <div class="quiz-timer" id="quizTimer">60s</div>
+            <div id="quizProgress" style="font-weight: 700; background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 15px;"></div>
+        </div>
+
+        <div class="quiz-container">
+            <div class="quiz-question-box">
+                <h3 id="questionText">Loading question...</h3>
+            </div>
+
+            <div class="quiz-options" id="quizOptions">
+                <!-- Options inserted here -->
+            </div>
+
+            <div id="explanationBox" class="explanation-box" style="display: none;">
+                <strong id="feedbackTitle">Correct!</strong>
+                <p id="explanationText">Explanation goes here...</p>
+            </div>
+
+            <button id="nextBtn" class="btn-submit" style="display: none; margin-top: 10px;" onclick="nextQuestion()">
+                Next Question <i class="fas fa-arrow-right"></i> 
+            </button>
+        </div>
+    </div>
+
+    <!-- Quiz Result Page -->
+    <div id="quizResultPage" class="page" style="display: flex; align-items: center; justify-content: center;">
+        <div class="result-container text-center">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <h2 id="resultTitle">FlashReview Completed!</h2>
+            <p class="result-score">Your Score: <span id="finalScore">0</span> / <span id="totalQuestions">0</span></p>
+            <div id="resultFeedback" class="mb-20">Excellent! Keep on reviewing.</div>
+            
+            <div class="topic-actions">
+                <button class="btn-action" onclick="window.location.href='index.html'"> <!-- Keep btn-action for primary action -->
+                    <i class="fas fa-home"></i> Home 
+                </button>
+                <button class="btn-action secondary" onclick="location.reload()"> <!-- Keep btn-action secondary for secondary action -->
+                    <i class="fas fa-redo"></i> Restart FlashReview 
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "Which law of thermodynamics states that energy cannot be created or destroyed, only transformed from one form to another?", options: ["Zeroth Law", "First Law", "Second Law", "Third Law"], correct: 1, exp: "The First Law of Thermodynamics is the Law of Conservation of Energy." },
+            { q: "In a cell, which organelle is responsible for cellular respiration and the production of ATP?", options: ["Ribosome", "Golgi Apparatus", "Mitochondrion", "Lysosome"], correct: 2, exp: "Mitochondria are often called the powerhouse of the cell." },
+            { q: "What is the molecular geometry of a water (H₂O) molecule?", options: ["Linear", "Trigonal Planar", "Bent", "Tetrahedral"], correct: 2, exp: "Water has a bent shape due to the two lone pairs of electrons on the oxygen atom." },
+            { q: "According to Newton’s Second Law of Motion, if the force applied to an object is doubled while the mass remains constant, the acceleration will:", options: ["Remain the same", "Be halved", "Double", "Quadruple"], correct: 2, exp: "F = ma; force and acceleration are directly proportional when mass is constant." },
+            { q: "Which type of chemical bond involves the complete transfer of electrons from one atom to another?", options: ["Covalent Bond", "Ionic Bond", "Hydrogen Bond", "Metallic Bond"], correct: 1, exp: "Ionic bonds usually occur between a metal and a non-metal." },
+            { q: "In the periodic table, elements in the same vertical column (group) share similar:", options: ["Atomic masses", "Numbers of neutrons", "Chemical properties and valence electrons", "Physical states at room temperature"], correct: 2, exp: "Groups in the periodic table share the same number of valence electrons." },
+            { q: "What is the process by which plants release water vapor into the atmosphere through small openings in their leaves?", options: ["Photosynthesis", "Respiration", "Transpiration", "Condensation"], correct: 2, exp: "Transpiration is the evaporation of water from plant leaves." },
+            { q: "A solution with a pH of 3 is considered:", options: ["Strongly Basic", "Weakly Basic", "Neutral", "Strongly Acidic"], correct: 3, exp: "pH values below 7 are acidic; 3 is strongly acidic." },
+            { q: "Which layer of the Earth’s atmosphere contains the ozone layer that protects us from ultraviolet radiation?", options: ["Troposphere", "Stratosphere", "Mesosphere", "Thermosphere"], correct: 1, exp: "The ozone layer is located within the stratosphere." },
+            { q: "In genetics, what is the phenotypic ratio of a monohybrid cross between two heterozygous parents (Aa × Aa)?", options: ["1:2:1", "3:1", "9:3:3:1", "1:1"], correct: 1, exp: "A monohybrid cross between heterozygotes results in a 3:1 phenotypic ratio." },
+            { q: "What is the primary cause of the Earth’s seasons?", options: ["Distance between Earth and Sun", "Rotation on its axis", "Tilt of Earth's axis", "Changes in solar flare activity"], correct: 2, exp: "The tilt of Earth's axis (~23.5 degrees) causes seasonal variations." },
+            { q: "Which subatomic particle has a negative charge and negligible mass?", options: ["Proton", "Neutron", "Electron", "Quark"], correct: 2, exp: "Electrons have a negative charge and much less mass than protons or neutrons." },
+            { q: "In Physics, what is the unit of measure for electrical resistance?", options: ["Volt", "Ampere", "Ohm", "Watt"], correct: 2, exp: "Ohm is the SI unit of electrical resistance." },
+            { q: "What type of rock is formed from the cooling and solidification of magma or lava?", options: ["Sedimentary", "Metamorphic", "Igneous", "Limestone"], correct: 2, exp: "Igneous rocks are formed from solidified molten rock." },
+            { q: "Which enzyme in the human digestive system starts the breakdown of starches in the mouth?", options: ["Pepsin", "Lipase", "Amylase", "Trypsin"], correct: 2, exp: "Salivary amylase begins starch digestion in the oral cavity." },
+            { q: "What is the half-life of a radioactive isotope?", options: ["Half the time to be created", "Time for half of the sample to decay", "Total life span", "Time to double in mass"], correct: 1, exp: "Half-life is the time it takes for half of the atoms in a sample to decay." },
+            { q: "Which planet in our solar system is known as the 'Red Planet' due to iron oxide on its surface?", options: ["Venus", "Mars", "Jupiter", "Saturn"], correct: 1, exp: "Mars appears red because of iron oxide (rust) on its surface." },
+            { q: "In a parallel circuit, if one light bulb burns out, what happens to the other bulbs?", options: ["They all go out", "They stay lit", "They become dimmer", "They explode"], correct: 1, exp: "In parallel circuits, electricity has multiple paths, so one failure doesn't stop others." },
+            { q: "What is the main product of the Calvin Cycle in photosynthesis?", options: ["Oxygen", "ATP", "G3P (Sugar)", "Carbon Dioxide"], correct: 2, exp: "Glyceraldehyde 3-phosphate (G3P) is the direct product of the Calvin cycle." },
+            { q: "Which geological feature is formed at a convergent boundary where an oceanic plate subducts under a continental plate?", options: ["Mid-ocean ridge", "Rift valley", "Trench and Volcanic Arc", "Strike-slip fault"], correct: 2, exp: "Subduction zones create deep ocean trenches and volcanic arcs on land." },
+            { q: "What is the chemical formula for Methane?", options: ["CH₄", "C₂H₆", "CO₂", "NH₃"], correct: 0, exp: "Methane is the simplest alkane with formula CH₄." },
+            { q: "According to Darwin’s Theory of Evolution, what is the primary mechanism of evolutionary change?", options: ["Genetic Engineering", "Natural Selection", "Spontaneous Generation", "Inheritance of Acquired Characteristics"], correct: 1, exp: "Natural Selection is the survival and reproduction of individuals with favorable traits." },
+            { q: "What property of a wave determines its pitch in sound?", options: ["Amplitude", "Frequency", "Velocity", "Phase"], correct: 1, exp: "Frequency determines the perceived pitch of a sound." },
+            { q: "Which of the following is a vestigial structure in humans?", options: ["Heart", "Appendix", "Liver", "Lungs"], correct: 1, exp: "The appendix is a structure that has lost most of its ancestral function." },
+            { q: "What is the SI unit of power?", options: ["Joule", "Newton", "Watt", "Pascal"], correct: 2, exp: "1 Watt is equal to 1 Joule per second." },
+            { q: "Which of the following describes the \"Doppler Effect\"?", options: ["The bending of light as it passes through a medium.", "The change in frequency of a wave in relation to an observer moving relative to the source.", "The reflection of sound waves off a hard surface.", "The total internal reflection of light in a fiber optic cable."], correct: 1, exp: "The Doppler Effect is experienced when the distance between the source of waves and the observer changes, causing a perceived shift in pitch (sound) or color (light)." },
+            { q: "What is the correct sequence of the phases of Mitosis?", options: ["Anaphase, Telophase, Prophase, Metaphase", "Prophase, Metaphase, Anaphase, Telophase", "Metaphase, Prophase, Telophase, Anaphase", "Telophase, Anaphase, Metaphase, Prophase"], correct: 1, exp: "The standard mnemonic is PMAT: Prophase (condensation), Metaphase (alignment), Anaphase (separation), and Telophase (division)." },
+            { q: "An atom of Carbon-14 has how many neutrons? (Atomic number of Carbon is 6).", options: ["6", "7", "8", "14"], correct: 2, exp: "Neutrons = Mass Number - Atomic Number. 14 - 6 = 8." },
+            { q: "Which law states that at a constant temperature, the volume of a gas is inversely proportional to its pressure?", options: ["Charles's Law", "Boyle's Law", "Gay-Lussac's Law", "Avogadro's Law"], correct: 1, exp: "Boyle’s Law (P1V1 = P2V2) describes the inverse relationship between pressure and volume when temperature is constant." },
+            { q: "What is the most abundant gas in the Earth's atmosphere?", options: ["Oxygen", "Carbon Dioxide", "Nitrogen", "Argon"], correct: 2, exp: "Nitrogen makes up approximately 78% of the Earth's atmosphere, while Oxygen is about 21%." },
+            { q: "In the human heart, which chamber pumps oxygenated blood to the rest of the body?", options: ["Right Atrium", "Right Ventricle", "Left Atrium", "Left Ventricle"], correct: 3, exp: "The Left Ventricle has the thickest muscular wall because it must pump blood through the aorta to the entire systemic circulation." },
+            { q: "What type of lens is used to correct myopia (nearsightedness)?", options: ["Convex lens", "Concave lens", "Bifocal lens", "Cylindrical lens"], correct: 1, exp: "Myopia occurs when light focuses in front of the retina; a concave (diverging) lens spreads the light out to push the focal point back onto the retina." },
+            { q: "Which chemical principle states that \"electrons fill lower-energy orbitals before filling higher-energy ones\"?", options: ["Pauli Exclusion Principle", "Hund’s Rule", "Aufbau Principle", "Heisenberg Uncertainty Principle"], correct: 2, exp: "\"Aufbau\" is German for \"building up,\" referring to the order in which electrons occupy subshells." },
+            { q: "Which of the following is an example of a chemical change?", options: ["Melting ice", "Dissolving sugar in water", "Iron rusting", "Breaking glass"], correct: 2, exp: "Rusting is a chemical reaction (oxidation) that creates a new substance (iron oxide). The others are physical changes." },
+            { q: "The Richter scale is used to measure the __________ of an earthquake.", options: ["Intensity", "Magnitude", "Duration", "Depth"], correct: 1, exp: "Magnitude measures the energy released (Richter/Moment Magnitude), while Intensity (Mercalli) measures the damage caused." },
+            { q: "Which organic molecule is the primary source of quick energy for living organisms?", options: ["Proteins", "Lipids", "Nucleic Acids", "Carbohydrates"], correct: 3, exp: "Carbohydrates like glucose are easily broken down to produce ATP during cellular respiration." },
+            { q: "What is the value of the acceleration due to gravity on Earth?", options: ["8.9 m/s²", "9.8 m/s²", "10.5 m/s²", "32.2 m/s²"], correct: 1, exp: "Standard gravity (g) is approximately 9.8 m/s² downward." },
+            { q: "In an ecosystem, which of the following describes the \"Niche\"?", options: ["The physical location where an organism lives.", "The role or function of an organism within its community.", "A group of organisms of the same species.", "The total number of organisms in an area."], correct: 1, exp: "While a \"habitat\" is the address, the \"niche\" is the \"profession\" or role the organism plays." },
+            { q: "What is the oxidation number of Hydrogen in H₂O?", options: ["-1", "0", "+1", "+2"], correct: 2, exp: "In most compounds (except metal hydrides), Hydrogen has an oxidation state of +1." },
+            { q: "Which planet is known for having the most extensive and visible ring system?", options: ["Jupiter", "Neptune", "Saturn", "Uranus"], correct: 2, exp: "While all gas giants have rings, Saturn's rings are the most prominent and made largely of ice particles." },
+            { q: "What is the product of mass and velocity?", options: ["Force", "Work", "Momentum", "Power"], correct: 2, exp: "Momentum (p) is calculated as p = mv." },
+            { q: "Which kingdom of life consists of organisms that are mostly multicellular, eukaryotic, and heterotrophic by absorption?", options: ["Plantae", "Animalia", "Fungi", "Protista"], correct: 2, exp: "Fungi are decomposers that absorb nutrients from organic matter, unlike animals which ingest food." },
+            { q: "What is the term for the movement of molecules from an area of high concentration to an area of low concentration?", options: ["Osmosis", "Diffusion", "Active Transport", "Endocytosis"], correct: 1, exp: "Diffusion is a passive process. Osmosis is a specific type of diffusion involving water through a membrane." },
+            { q: "Which element has the highest electronegativity in the periodic table?", options: ["Cesium", "Oxygen", "Fluorine", "Helium"], correct: 2, exp: "Fluorine is the most electronegative element, with a value of approximately 4.0 on the Pauling scale." },
+            { q: "What kind of boundary is the San Andreas Fault?", options: ["Convergent", "Diverging", "Transform", "Subduction"], correct: 2, exp: "Transform boundaries occur where two plates slide past each other horizontally." },
+            { q: "What is the functional unit of the kidney?", options: ["Neuron", "Nephron", "Alveoli", "Villi"], correct: 1, exp: "The nephron is responsible for filtering blood and forming urine." },
+            { q: "According to the Kinetic Molecular Theory, as temperature increases, the average kinetic energy of particles:", options: ["Decreases", "Increases", "Stays the same", "Becomes zero"], correct: 1, exp: "Temperature is a direct measure of the average kinetic energy of the particles in a substance." },
+            { q: "Which of the following is a scalar quantity?", options: ["Displacement", "Velocity", "Acceleration", "Speed"], correct: 3, exp: "Speed only has magnitude, while the others are vectors (magnitude and direction)." },
+            { q: "What is the main function of the Large Intestine?", options: ["Digestion of proteins", "Absorption of water and salts", "Production of bile", "Storage of glycogen"], correct: 1, exp: "Most nutrient absorption happens in the small intestine; the large intestine reclaims water to form solid waste." },
+            { q: "What is the common name for the compound NaHCO₃?", options: ["Table salt", "Vinegar", "Baking soda", "Bleach"], correct: 2, exp: "Sodium bicarbonate is baking soda. Sodium chloride is table salt (NaCl)." },
+            { q: "Which property of water allows insects like water striders to walk on its surface?", options: ["Adhesion", "High specific heat", "Surface tension", "Capillary action"], correct: 2, exp: "Surface tension is caused by the cohesion of water molecules at the surface." },
+            { q: "What is the boiling point of water in the Kelvin scale?", options: ["100 K", "212 K", "273 K", "373 K"], correct: 3, exp: "K = °C + 273.15. Since water boils at 100°C, the Kelvin equivalent is ~373 K." },
+            { q: "The theory that describes the origin of the universe from a single point of infinite density is the:", options: ["Steady State Theory", "Big Bang Theory", "Nebular Hypothesis", "Pulsating Universe Theory"], correct: 1, exp: "The Big Bang Theory is the prevailing cosmological model for the universe's birth." },
+            { q: "What is the work done if a 10 N force moves an object 5 meters in the direction of the force?", options: ["2 Joules", "15 Joules", "50 Joules", "0 Joules"], correct: 2, exp: "Work = Force x Distance. 10 x 5 = 50 J." },
+            { q: "Which type of RNA carries the genetic code from the DNA in the nucleus to the ribosomes?", options: ["mRNA", "tRNA", "rRNA", "snRNA"], correct: 0, exp: "Messenger RNA (mRNA) acts as the bridge between DNA and protein synthesis." },
+            { q: "What is the pH of a neutral solution at 25°C?", options: ["0", "1", "7", "14"], correct: 2, exp: "On the pH scale of 0–14, 7 is the neutral point (like pure water)." },
+            { q: "Which mineral is the hardest on the Mohs scale?", options: ["Quartz", "Talc", "Diamond", "Corundum"], correct: 2, exp: "Diamond is rated 10 on the Mohs scale, making it the hardest natural mineral." },
+            { q: "A change in the DNA sequence is known as a:", options: ["Translation", "Transcription", "Mutation", "Replication"], correct: 2, exp: "Mutations can be beneficial, neutral, or harmful changes to the genetic code." },
+            { q: "Which law of motion explains why a person moves forward when a car suddenly stops?", options: ["Law of Inertia", "Law of Acceleration", "Law of Interaction", "Law of Gravitation"], correct: 0, exp: "Newton's First Law (Inertia) states that an object in motion tends to stay in motion unless acted upon by an external force." },
+            { q: "What is the total number of chromosomes in a normal human somatic cell?", options: ["23", "44", "46", "48"], correct: 2, exp: "Humans have 23 pairs of chromosomes, totaling 46. Gametes (sperm/egg) have 23." }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 60;
+        let totalTimeUsed = 0;
+        let currentUser = null;
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                currentUser = {
+                    uid: user.uid,
+                    name: user.displayName || user.email.split('@')[0],
+                    major: 'Science'
+                };
+            } else { window.location.href = 'index.html'; }
+        });
+
+        function startQuiz() {
+            // Shuffle questions
+            for (let i = questions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [questions[i], questions[j]] = [questions[j], questions[i]];
+            }
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById('quizProgress').innerText = `${currentIdx + 1} / ${questions.length}`;
+            document.getElementById('questionText').innerText = q.q;
+            const container = document.getElementById('quizOptions');
+            container.innerHTML = '';
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = `${String.fromCharCode(65 + index)}. ${opt}`;
+                btn.onclick = () => selectOption(index);
+                container.appendChild(btn);
+            });
+            document.getElementById('explanationBox').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer); timeLeft = 60;
+            document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+            timer = setInterval(() => {
+                timeLeft--; document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) { clearInterval(timer); selectOption(-1); }
+            }, 1000);
+        }
+
+        function playSound(file) {
+            if (localStorage.getItem('isMuted') === 'true') return;
+            const audio = new Audio(file);
+            audio.play().catch(e => {});
+        }
+
+        function selectOption(index) {
+            clearInterval(timer);
+            const timeSpent = 60 - timeLeft;
+            totalTimeUsed += timeSpent;
+            const q = questions[currentIdx];
+            const options = document.querySelectorAll('.option-btn');
+            options.forEach(btn => btn.disabled = true);
+            if (index === q.correct) {
+                options[index].classList.add('correct'); score++;
+                document.getElementById('feedbackTitle').innerText = "Correct!";
+                document.getElementById('feedbackTitle').style.color = "#4CAF50";
+                playSound('correct.mp3');
+            } else {
+                if (index !== -1) options[index].classList.add('wrong');
+                options[q.correct].classList.add('correct');
+                document.getElementById('feedbackTitle').innerText = "Incorrect";
+                document.getElementById('feedbackTitle').style.color = "#f44336";
+                playSound('wrong.mp3');
+            }
+            document.getElementById('explanationText').innerText = q.exp;
+            document.getElementById('explanationBox').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentIdx++;
+            if (currentIdx < questions.length) showQuestion();
+            else showResults();
+        }
+
+        async function saveResult(timeSpent) {
+            if (!currentUser) return;
+            try {
+                const userRef = db.collection('leaderboard').doc(currentUser.uid);
+                await userRef.set({
+                    name: currentUser.name,
+                    major: currentUser.major,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+                    totalTimeSpent: firebase.firestore.FieldValue.increment(Math.ceil(timeSpent / 60))
+                }, { merge: true });
+            } catch (e) { console.error(e); }
+        }
+
+        function showResults() {
+            document.getElementById('quizPage').classList.remove('active');
+            document.getElementById('quizPage').style.display = 'none';
+            document.getElementById('quizResultPage').classList.add('active');
+            
+            const finalScoreEl = document.getElementById('finalScore');
+            const totalQuestionsEl = document.getElementById('totalQuestions');
+            const total = questions.length;
+            totalQuestionsEl.innerText = total;
+
+            playSound('finish.mp3');
+
+            // Animated Score
+            let current = 0;
+            if (score > 0) {
+                const interval = setInterval(() => {
+                    current++;
+                    finalScoreEl.innerText = current;
+                    if (current >= score) clearInterval(interval);
+                }, Math.max(20, 1000 / score));
+            } else {
+                finalScoreEl.innerText = "0";
+            }
+            
+            const feedback = document.getElementById('resultFeedback');
+            const percentage = Math.round((score / total) * 100);
+            if (percentage >= 75) {
+                feedback.innerText = "Passed! Your scientific inquiry and analysis skills are strong.";
+            } else {
+                feedback.innerText = "Failed! Keep reviewing the scientific principles to master this domain.";
+            }
+
+            saveResult(totalTimeUsed);
+        }
+        startQuiz();
+    </script>
+</body>
+</html>

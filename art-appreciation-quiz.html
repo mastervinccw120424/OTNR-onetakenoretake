@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashReview - Art Appreciation</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <!-- Quiz Page -->
+    <div id="quizPage" class="page active" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="dashboard-header" style="width: 100%; max-width: 800px; margin-bottom: 20px;">
+            <button class="btn-back" onclick="window.location.href='index.html'"> 
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 style="font-size: 1.2rem; color: var(--text-muted);">Art Appreciation</h2>
+            <div class="quiz-timer" id="quizTimer">60s</div>
+            <div id="quizProgress" style="font-weight: 700; background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 15px;">1 / 50</div>
+        </div>
+
+        <div class="quiz-container">
+            <div class="quiz-question-box">
+                <h3 id="questionText">Loading question...</h3>
+            </div>
+
+            <div class="quiz-options" id="quizOptions">
+                <!-- Options inserted here -->
+            </div>
+
+            <div id="explanationBox" class="explanation-box" style="display: none;">
+                <strong id="feedbackTitle">Correct!</strong>
+                <p id="explanationText">Explanation goes here...</p>
+            </div>
+
+            <button id="nextBtn" class="btn-submit" style="display: none; margin-top: 10px;" onclick="nextQuestion()">
+                Next Question <i class="fas fa-arrow-right"></i> 
+            </button>
+        </div>
+    </div>
+
+    <!-- Quiz Result Page -->
+    <div id="quizResultPage" class="page" style="display: flex; align-items: center; justify-content: center;">
+        <div class="result-container text-center">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <h2 id="resultTitle">FlashReview Completed!</h2>
+            <p class="result-score">Your Score: <span id="finalScore">0</span> / <span id="totalQuestions">0</span></p>
+            <div id="resultFeedback" class="mb-20">Great job! Keep reviewing.</div>
+            
+            <div class="topic-actions">
+                <button class="btn-action" onclick="window.location.href='index.html'"> <!-- Keep btn-action for primary action -->
+                    <i class="fas fa-home"></i> Home 
+                </button>
+                <button class="btn-action secondary" onclick="location.reload()"> <!-- Keep btn-action secondary for secondary action -->
+                    <i class="fas fa-redo"></i> Restart FlashReview 
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "Which function of art is involved when an artwork is created to provide aesthetic pleasure or to express the artist's personal feelings?", options: ["  Function", "Physical Function", "Personal Function", "Utilitarian Function"], correct: 2, exp: "Personal function focuses on the artist's self-expression or the viewer's individual experience." },
+            { q: "In the elements of art, what refers to the lightness or darkness of a color?", options: ["Intensity", "Hue", "Value", "Texture"], correct: 2, exp: "Value is the relative degree of light and dark in a design." },
+            { q: "What is the method of presenting art where the subject is represented exactly as it appears in real life, without any distortion?", options: ["Realism", "Abstraction", "Surrealism", "Fauvism"], correct: 0, exp: "Realism aims to depict objects and people as they are in everyday life." },
+            { q: "This principle of design refers to the distribution of visual weight in a composition, which can be symmetrical or asymmetrical.", options: ["Emphasis", "Rhythm", "Balance", "Proportion"], correct: 2, exp: "Balance ensures that no single part of the artwork overpowers the rest." },
+            { q: "Which perspective in art criticism focuses on the life, background, and environment of the artist to understand the meaning of the work?", options: ["Formalist Perspective", "Contextual Perspective", "Stylistic Perspective", "Impressionist Perspective"], correct: 1, exp: "Contextualism looks at the social, historical, and biographical factors surrounding the art." },
+            { q: "The \"Spoliarium,\" one of the most famous Philippine paintings, was created by which artist?", options: ["Felix Resurreccion Hidalgo", "Fernando Amorsolo", "Juan Luna", "Vicente Manansala"], correct: 2, exp: "Juan Luna won a gold medal for this masterpiece at the Exposición Nacional de Bellas Artes in 1884." },
+            { q: "Which art movement is characterized by the use of dream-like imagery, illogical scenes, and the exploration of the subconscious mind?", options: ["Impressionism", "Surrealism", "Expressionism", "Cubism"], correct: 1, exp: "Surrealists like Salvador Dalí sought to release the creative potential of the unconscious." },
+            { q: "What is the term for the \"meaning\" or \"message\" conveyed by an artwork?", options: ["Subject", "Content", "Form", "Medium"], correct: 1, exp: "While subject is what is depicted, content is the interpretation or significance of that depiction." },
+            { q: "In color theory, colors that are opposite each other on the color wheel (like red and green) are called:", options: ["Analogous Colors", "Monochromatic Colors", "Complementary Colors", "Tertiary Colors"], correct: 2, exp: "Complementary colors create the highest contrast when placed next to each other." },
+            { q: "Which Filipino National Artist is known as the \"Grand Old Man of Philippine Art\" and famous for his sun-drenched rural landscapes?", options: ["Benedicto Cabrera (BenCab)", "Napoleon Abueva", "Fernando Amorsolo", "Carlos \"Botong\" Francisco"], correct: 2, exp: "Amorsolo is celebrated for his use of \"Chiaroscuro\" to capture Philippine light." },
+            { q: "The technique of using light and shadow to create the illusion of three-dimensional volume on a flat surface is known as:", options: ["Impasto", "Chiaroscuro", "Sfumato", "Fresco"], correct: 1, exp: "This Italian term translates to \"light-dark.\"" },
+            { q: "Which type of art is created primarily for its practical use or utility, such as architecture or ceramics?", options: ["Fine Arts", "Applied Arts", "Performance Arts", "Literary Arts"], correct: 1, exp: "Applied arts bridge the gap between design and function." },
+            { q: "In sculpture, what is the process where material is added or built up to create a form, such as in clay modeling?", options: ["Subtractive Process", "Additive Process", "Casting Process", "Assemblage"], correct: 1, exp: "Modeling is additive, whereas carving is subtractive." },
+            { q: "What art style was pioneered by Pablo Picasso and Georges Braque, characterized by breaking down objects into geometric shapes?", options: ["Pop Art", "Minimalism", "Cubism", "Dadaism"], correct: 2, exp: "Cubism revolutionized art by showing multiple viewpoints simultaneously." },
+            { q: " \"Medium\" in art refers to:", options: ["The size of the artwork.", "The material or substance used by the artist to create the work.", "The person who buys the art.", "The message of the artwork."], correct: 1, exp: "Examples include oil paint, watercolor, marble, or digital software." },
+            { q: "Which element of art refers to the surface quality or \"feel\" of an object, whether real or implied?", options: ["Space", "Value", "Texture", "Line"], correct: 2, exp: "Texture appeals to our sense of touch. In painting, \"visual texture\" is an illusion created by the artist to make a surface look rough or smooth, while \"tactile texture\" is the actual physical feel of the paint or material." },
+            { q: "In the principles of design, what refers to the repetition of elements like lines or shapes to create a visual \"beat\" or movement?", options: ["Emphasis", "Rhythm", "Variety", "Unity"], correct: 1, exp: "Much like music, Rhythm in art is created by repeating elements in a regular or cyclical fashion. It helps lead the viewer's eye across the composition in a specific, timed direction." },
+            { q: "Who is the National Artist known as the \"Father of Modern Philippine Sculpture\"?", options: ["Guillermo Tolentino", "Napoleon Abueva", "Abdulmari Imao", "Eduardo Castrillo"], correct: 1, exp: "Napoleon Abueva introduced modernism to Philippine sculpture. He was famous for using a wide variety of materials like wood, stone, and metal, and for creating both representational and abstract works." },
+            { q: "Which art movement focused on capturing the fleeting effects of light and color, often using short, visible brushstrokes?", options: ["Neoclassicism", "Impressionism", "Romanticism", "Minimalism"], correct: 1, exp: "Impressionism (led by artists like Monet) sought to capture a \"momentary feel\" of a scene. They often painted outdoors to observe how natural light changed colors at different times of the day." },
+            { q: "What is \"Negative Space\" in a composition?", options: ["The area occupied by the main subject.", "The empty area around or between the main subjects.", "The dark shadows in a painting.", "The frame surrounding the artwork."], correct: 1, exp: "While \"Positive Space\" is the subject itself, Negative Space is the background or the \"air\" around it. Creative use of negative space can define the subject more clearly and provide visual rest." },
+            { q: "Who painted \"The Making of the Philippine Flag\" and is celebrated for his \"backlighting\" technique?", options: ["Juan Luna", "Fernando Amorsolo", "Fabian de la Rosa", "Carlos Francisco"], correct: 1, exp: "Fernando Amorsolo utilized backlighting to create a \"glow\" around his subjects. His work often depicted idealized, peaceful rural scenes that defined Philippine national identity during the early 20th century." },
+            { q: "Which element of art is defined as a point moving in space and can be used to outline shapes or create emotions?", options: ["Shape", "Form", "Line", "Texture"], correct: 2, exp: "The Line is the most basic element. Horizontal lines suggest peace, vertical lines suggest strength, and diagonal lines suggest action or tension." },
+            { q: "What is the difference between \"Shape\" and \"Form\"?", options: ["Shape is 3D; Form is 2D.", "Shape is 2D (height and width); Form is 3D (height, width, and depth).", "There is no difference between the two.", "Shape is for paintings; Form is only for architecture."], correct: 1, exp: "A Shape is a flat area defined by an edge. A Form has depth and volume, either physically (sculpture) or through the illusion of shading (drawing a sphere to look like a ball)." },
+            { q: "Which type of balance is achieved when elements radiate out from a central point?", options: ["Asymmetrical Balance", "Radial Balance", "Symmetrical Balance", "Discordant Balance"], correct: 1, exp: "Radial Balance creates a strong focal point in the center, like a sunflower, a snowflake, or a mandala. Every part of the design stems from or leads back to that middle point." },
+            { q: "Who is the National Artist for Visual Arts known for his massive historical murals, such as those at the Manila City Hall?", options: ["Vicente Manansala", "Carlos \"Botong\" Francisco", "Victorio Edades", "Hernando Ocampo"], correct: 1, exp: "Botong Francisco revived the art of mural painting. His works turned historical events into flowing, rhythmic visual narratives inspired by Philippine history and folklore." },
+            { q: "In color theory, what are the \"Secondary Colors\"?", options: ["Red, Yellow, Blue", "Orange, Green, Violet", "Black, White, Gray", "Brown, Pink, Gold"], correct: 1, exp: "Secondary Colors are created by mixing two primary colors together (Red + Yellow = Orange; Blue + Yellow = Green; Red + Blue = Violet)." },
+            { q: "What do you call colors that are side-by-side on the color wheel, such as Yellow, Yellow-Orange, and Orange?", options: ["Analogous Colors", "Monochromatic Colors", "Complementary Colors", "Tertiary Colors"], correct: 0, exp: "Analogous Colors provide a sense of harmony because they share a common base color and are located next to each other on the color wheel." },
+            { q: "Which Filipino artist is famous for his \"Abstract Expressionism\" and his masterpiece \"Genesis\"?", options: ["Vicente Manansala", "Hernando R. Ocampo", "Jose Joya", "Arturo Luz"], correct: 1, exp: "H.R. Ocampo used bold, interlocking shapes. His work Genesis is the iconic design featured on the main curtain of the Cultural Center of the Philippines (CCP)." },
+            { q: "The \"Oblation\" statue, the symbol of the University of the Philippines, was created by:", options: ["Napoleon Abueva", "Guillermo Tolentino", "Solomon Saprid", "Ramon Orlina"], correct: 1, exp: "Guillermo Tolentino was a master of the classical style, emphasizing anatomical accuracy, grace, and the country's highest academic and nationalistic ideals." },
+            { q: "Which art style portrays subjects in a distorted or exaggerated way to evoke strong emotional responses?", options: ["Realism", "Expressionism", "Classicism", "Minimalism"], correct: 1, exp: "Expressionism prioritizes internal emotions over external reality. Often, shapes are twisted or colors are \"unnatural\" (like a green sky) to express feelings like fear, anxiety, or anger." },
+            { q: "What is a \"Monochromatic\" color scheme?", options: ["Using many different colors.", "Using only one color and its various tints and shades.", "Using only black and white.", "Using colors that are opposite each other."], correct: 1, exp: "Monochromatic refers to using different values of a single hue (e.g., dark blue, sky blue, and navy blue) to create a clean, unified look." },
+            { q: "Which principle of art emphasizes one part of the artwork to make it stand out as a focal point?", options: ["Emphasis", "Pattern", "Movement", "Proportion"], correct: 0, exp: "Emphasis draws the viewer's attention to a specific area through the use of high contrast in color, size, placement, or detail." },
+            { q: "Who is the Filipina National Artist for Dance known as the \"Mother of Philippine Folk Dance\"?", options: ["Leonor Orosa-Goquingco", "Francisca Reyes-Aquino", "Alice Reyes", "Lucrecia Kasilag"], correct: 1, exp: "Francisca Reyes-Aquino pioneered the research and preservation of traditional dances from various regions, saving Philippine folk culture from disappearing during the colonial period." },
+            { q: "What is \"Fauvism\"?", options: ["An art style using dull colors.", "An art style using bright, wild, and non-naturalistic colors.", "A style that only uses geometric shapes.", "A form of realistic stone carving."], correct: 1, exp: "Fauvism (from the term \"wild beasts\") used color as an emotional tool rather than a realistic one—for example, painting a person’s skin blue or hair orange." },
+            { q: "In the \"Rule of Thirds,\" where is the best place to put the subject for a dynamic composition?", options: ["Exactly in the dead center.", "At the intersections of the imaginary grid lines.", "At the very edge of the frame to hide it.", "At the bottom corners only."], correct: 1, exp: "The Rule of Thirds suggests that placing a subject at the intersections of a 3x3 grid creates more tension, energy, and interest than simply centering it." },
+            { q: "Which medium is made from pigment mixed with egg yolk?", options: ["Oil Paint", "Watercolor", "Tempera", "Fresco"], correct: 2, exp: "Tempera was the primary painting medium before oil paint became popular. It dries very quickly and results in a long-lasting, matte, and permanent finish." },
+            { q: "Who is the National Artist known for his \"Transparent Cubism\"?", options: ["Victorio Edades", "Vicente Manansala", "Arturo Luz", "Ang Kiukok"], correct: 1, exp: "In Manansala's Transparent Cubism, shapes overlap but remain \"see-through\" or translucent, blending the local scenery with modern geometric structures." },
+            { q: "What is \"Horror Vacui\" in art?", options: ["The fear of painting.", "The practice of filling the entire surface with detail, leaving no empty space.", "Using only dark colors to show fear.", "A style used only in horror movies."], correct: 1, exp: "Derived from the Latin for \"fear of empty space,\" Horror Vacui is common in Philippine folk art, such as the busy decorations on jeepneys or traditional weaves." },
+            { q: "Which Filipino artist is famous for his \"Sabel\" series?", options: ["Benedicto \"BenCab\" Cabrera", "Kidlat Tahimik", "Santiago Bose", "Roberto Villanueva"], correct: 0, exp: "The Sabel series by BenCab became an iconic symbol of the dispossessed, representing the resilience and the moving spirit of the Filipino people." },
+            { q: "What is \"Kitsch\" in art?", options: ["Highly expensive masterpieces.", "Art considered to be in poor taste due to excessive garishness or sentimentality.", "Ancient Greek pottery found in kitchens.", "A specific type of minimalist sculpture."], correct: 1, exp: "Kitsch refers to art that is \"low-brow\" or commercialized, often considered tacky because it is overly emotional, sentimental, or poorly designed." },
+            { q: "Which principle refers to the size relationship between different parts of a whole?", options: ["Balance", "Harmony", "Proportion", "Unity"], correct: 2, exp: "Proportion ensures that the size of one part (e.g., the head) is correct in relation to the rest of the body or the entire composition." },
+            { q: "Which technique creates the illusion of depth by using a vanishing point on the horizon?", options: ["Chiaroscuro", "Linear Perspective", "Sfumato", "Impasto"], correct: 1, exp: "Linear Perspective is a mathematical system used to create the illusion of three-dimensional depth on a two-dimensional flat surface (like paper or canvas)." },
+            { q: "Who is the National Artist known for his vivid and often disturbing expressionistic paintings of struggle and suffering?", options: ["Fernando Amorsolo", "Ang Kiukok", "Mauro Malang Santos", "Cesar Legaspi"], correct: 1, exp: "Ang Kiukok's work often depicted agonized figures, fighting roosters, and crucifixions as a reflection of the social and political turmoil of his time." },
+            { q: "What is the main characteristic of \"Pop Art\"?", options: ["It uses images from popular culture and mass media.", "It is only about bubble gum and soda.", "It is very sad and emotional.", "It uses only black and white colors."], correct: 0, exp: "Pop Art turned everyday commercial objects—like soup cans, comic strips, or celebrities—into subjects for \"high art\" to comment on modern consumerism." },
+            { q: "Which Filipino artist was the first to be named a National Artist in 1972?", options: ["Juan Luna", "Fernando Amorsolo", "Guillermo Tolentino", "Jose Joya"], correct: 1, exp: "Fernando Amorsolo was the first-ever recipient of the National Artist award, given posthumously the same year the award was established." },
+            { q: "What is the \"Foreground\" of a painting?", options: ["The part of the view that is nearest to the observer.", "The background where the sky is.", "The middle part where the mountains are.", "The frame of the painting."], correct: 0, exp: "The Foreground is the area of a scene that appears closest to the viewer. Objects here are usually larger and have more detail than those in the background." },
+            { q: "Which art movement abandoned all representational subjects and focused only on color, line, and form?", options: ["Realism", "Non-Objective Art", "Romanticism", "Neoclassicism"], correct: 1, exp: "In Non-Objective art, there are no recognizable objects from the real world. The focus is entirely on the visual beauty of colors, lines, and shapes themselves." },
+            { q: "Who is known for \"Action Painting\" and the \"drip painting\" technique?", options: ["Vincent van Gogh", "Jackson Pollock", "Leonardo da Vinci", "Edvard Munch"], correct: 1, exp: "Jackson Pollock revolutionized modern art by dripping or throwing paint onto a canvas on the floor, making the physical act of painting just as important as the result." },
+            { q: "What is \"Unity\" in an artwork?", options: ["Having many different things that don't match.", "The sense of oneness or wholeness in a work of art.", "Painting a picture of a group of people.", "Using only one color for everything."], correct: 1, exp: "Unity is the feeling that all the elements in a work of art work together to create a balanced, harmonious, and complete whole." },
+            { q: "What is \"Aesthetics\"?", options: ["The study of history through art.", "The branch of philosophy that deals with the nature of beauty and taste.", "The process of selling expensive art.", "The study of ancient Greek languages."], correct: 1, exp: "Aesthetics is the philosophical study of beauty and artistic taste. it asks questions like \"What is art?\" and \"Why do we find certain things beautiful?\"" }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 60;
+        let totalTimeUsed = 0;
+        let currentUser = null;
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                currentUser = {
+                    uid: user.uid,
+                    name: user.displayName || user.email.split('@')[0],
+                    major: 'General'
+                };
+            } else { window.location.href = 'index.html'; }
+        });
+
+        async function saveResult(timeSpent) {
+            if (!currentUser) return;
+            try {
+                const userRef = db.collection('leaderboard').doc(currentUser.uid);
+                await userRef.set({
+                    name: currentUser.name,
+                    major: currentUser.major,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+                    totalTimeSpent: firebase.firestore.FieldValue.increment(Math.ceil(timeSpent / 60))
+                }, { merge: true });
+            } catch (e) { console.error(e); }
+        }
+
+        function startQuiz() {
+            for (let i = questions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [questions[i], questions[j]] = [questions[j], questions[i]];
+            }
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById('quizProgress').innerText = `${currentIdx + 1} / 50`;
+            document.getElementById('questionText').innerText = q.q;
+            
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = `${String.fromCharCode(65 + index)}. ${opt}`;
+                btn.onclick = () => selectOption(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('explanationBox').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timeLeft = 60;
+            document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    selectOption(-1); 
+                }
+            }, 1000);
+        }
+
+        function playSound(file) {
+            if (localStorage.getItem('isMuted') === 'true') return;
+            const audio = new Audio(file);
+            audio.play().catch(e => {});
+        }
+
+        function selectOption(index) {
+            clearInterval(timer);
+            const timeSpent = 60 - timeLeft;
+            totalTimeUsed += timeSpent;
+            const q = questions[currentIdx];
+            const options = document.querySelectorAll('.option-btn');
+            
+            options.forEach(btn => btn.disabled = true);
+            
+            if (index === q.correct) {
+                options[index].classList.add('correct');
+                score++;
+                document.getElementById('feedbackTitle').innerText = "Correct!";
+                document.getElementById('feedbackTitle').style.color = "#4CAF50";
+                playSound('correct.mp3');
+            } else {
+                if (index !== -1) options[index].classList.add('wrong');
+                options[q.correct].classList.add('correct');
+                document.getElementById('feedbackTitle').innerText = "Incorrect";
+                document.getElementById('feedbackTitle').style.color = "#f44336";
+                playSound('wrong.mp3');
+            }
+            
+            document.getElementById('explanationText').innerText = q.exp;
+            document.getElementById('explanationBox').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentIdx++;
+            if (currentIdx < questions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quizPage').style.display = 'none';
+            document.getElementById('quizResultPage').classList.add('active');
+            
+            const finalScoreEl = document.getElementById('finalScore');
+            const totalQuestionsEl = document.getElementById('totalQuestions');
+            const total = questions.length;
+            totalQuestionsEl.innerText = total;
+
+            let current = 0;
+            if (score > 0) {
+                const timer = setInterval(() => {
+                    current++;
+                    finalScoreEl.innerText = current;
+                    if (current >= score) clearInterval(timer);
+                }, Math.max(20, 1000 / score));
+            } else {
+                finalScoreEl.innerText = "0";
+            }
+
+            const percentage = Math.round((score / total) * 100);
+            const feedback = document.getElementById('resultFeedback');
+            playSound('finish.mp3');
+
+            if (percentage >= 75) {
+                feedback.innerHTML = `<span class="result-percentage score-excellent">${percentage}% - Passed</span>Excellent! You have a keen eye for art principles and cultural significance.`;
+            } else {
+                feedback.innerHTML = `<span class="result-percentage score-poor">${percentage}% - Failed</span>Art is a journey of discovery. Keep practicing to deepen your appreciation.`;
+            }
+
+            saveResult(totalTimeUsed);
+        }
+
+        startQuiz();
+    </script>
+</body>
+</html>
