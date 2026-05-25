@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashReview - Facilitating Learner-Centered Teaching</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Sound effects -->
+    <audio id="sound-correct" src="correct.mp3" preload="auto"></audio>
+    <audio id="sound-wrong" src="wrong.mp3" preload="auto"></audio>
+    <audio id="sound-notification" src="notification.mp3" preload="auto"></audio>
+    <audio id="sound-finish" src="finish.mp3" preload="auto"></audio>
+
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script defer src="firebase-config.js"></script>
+    <script defer src="quiz-save-helper.js"></script>
+</head>
+<body>
+    <!-- Quiz Page -->
+    <div id="quizPage" class="page active" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="dashboard-header" style="width: 100%; max-width: 800px; margin-bottom: 20px;">
+            <button class="btn-back" onclick="window.location.href='index.html'">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 style="font-size: 1.2rem; color: var(--text-muted);">Facilitating Learner-Centered Teaching</h2>
+            <div class="quiz-timer" id="quizTimer">60s</div>
+            <div id="quizProgress" style="font-weight: 700; background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 15px;">1 / 50</div>
+        </div>
+
+        <div class="quiz-container">
+            <div class="quiz-question-box">
+                <h3 id="questionText">Loading question...</h3>
+            </div>
+
+            <div class="quiz-options" id="quizOptions">
+                <!-- Options inserted here -->
+            </div>
+
+            <div id="explanationBox" class="explanation-box" style="display: none;">
+                <strong id="feedbackTitle">Correct!</strong>
+                <p id="explanationText">Explanation goes here...</p>
+            </div>
+
+            <button id="nextBtn" class="btn-submit" style="display: none; margin-top: 10px;" onclick="nextQuestion()">
+                Next Question <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quiz Result Page -->
+    <div id="quizResultPage" class="page" style="display: flex; align-items: center; justify-content: center;">
+        <div class="result-container text-center">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <h2 id="resultTitle">FlashReview Completed!</h2>
+            <p class="result-score">Your Score: <span id="finalScore">0</span> / <span id="maxScore">50</span></p>
+            <div id="resultFeedback" class="mb-20">Great job! Keep reviewing.</div>
+            
+            <div class="topic-actions">
+                <button class="btn-action" onclick="window.location.href='index.html'">
+                    <i class="fas fa-home"></i> Home
+                </button>
+                <button class="btn-action secondary" onclick="location.reload()">
+                    <i class="fas fa-redo"></i> Restart FlashReview
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "Macey was walking by the road to buy “suka”. Suddenly, a green snake bit her right foot and left her very terrified for the rest of the day. Since that incident, she has held immense fear of all snakes. What concept is best illustrated in this scenario?", options: ["stimulus generalization", "associative learning", "stimulus discrimination", "stimulating stimulus"], correct: 0, exp: "Stimulus generalization occurs when an organism responds to stimuli that are similar to the original conditioned stimulus." },
+            { q: "Which of the following will trigger additional development if a child is exposed to more challenges and stimuli in his surroundings?", options: ["emotional development", "interest", "intelligence", "social development"], correct: 0, exp: "Exposure to environmental challenges and varied stimuli significantly triggers emotional development." },
+            { q: "If you have to develop in the students a correct sense of right and wrong, with which should you be concerned according to Freud?", options: ["Id", "Ego", "Super-ego and Ego", "Super-ego"], correct: 3, exp: "The Super-ego is the component of personality that holds all of our internalized moral standards and ideals." },
+            { q: "Bernadette enjoyed the roller coaster when they went to the Enchanted Kingdom. The mere sight of the roller coaster gets her excited. Which theory explains Bernadette’s behavior?", options: ["Operant conditioning", "Attribution Theory", "Pavlovian Theory", "Social learning theory"], correct: 0, exp: "This scenario describes learning through consequences and associations identified in conditioning theories." },
+            { q: "What is the most accurate definition of the puberty stage?", options: ["Staged when sexual maturation is achieved.", "Rapid physical growth and sexual maturation end childhood.", "The stage when adolescents establish identities separate from their parents.", "Rapid physical growth that occurs during adolescence."], correct: 1, exp: "Puberty is characterized by the onset of rapid physical growth and sexual maturation, effectively ending childhood." },
+            { q: "Which of the following is a barrier to the improvement of memory?", options: ["Mnemonics", "Retroactive inhibition", "Imagery", "Word categorization"], correct: 1, exp: "Retroactive inhibition occurs when newly learned information interferes with the retrieval of older information." },
+            { q: "What is the best explanation of Piaget’s concrete operational thought to describe the school-age child’s mental ability?", options: ["Can understand that moral principles may supersede the standards of society.", "Can understand that certain characteristics of an object remain the same when other characteristics are changed.", "A child can reason logically about things and events he or she perceives.", "A child’s ability to think about how he thinks."], correct: 1, exp: "This describes conservation, a key achievement in the concrete operational stage." },
+            { q: "The use of mnemonics helps a pupil _______ information.", options: ["apply", "understand", "recite", "remember"], correct: 3, exp: "Mnemonics are tools or techniques used specifically to help the brain better encode and recall information." },
+            { q: "What is the main role of the teacher?", options: ["Facilitator of student learning", "Classroom manager", "Model", "Manager"], correct: 0, exp: "In learner-centered education, the teacher acts as a facilitator rather than a mere dispenser of information." },
+            { q: "Which of the following is least associated with longer retention?", options: ["active involvement in the learning projects", "mastery learning", "rote learning", "elaborated feedback"], correct: 3, exp: "Based on specific instructional models, elaborated feedback is sometimes contrasted with deep internal cognitive processing like mastery." },
+            { q: "In treatment for alcoholism, Prince was made to drink an alcoholic beverage and then made to ingest Antabuse, a drug that produces nausea. Eventually, he was nauseated at the sight and smell of alcohol and stopped drinking alcohol. This is an example of what theory?", options: ["Attribution theory", "Operant conditioning", "Social learning theory", "Associative learning"], correct: 3, exp: "Associative learning is the process by which an organism learns an association between two stimuli or a behavior and a stimulus." },
+            { q: "According to Erickson, what is the primary task of an adolescent?", options: ["To establish integrity", "To establish trust", "To search for his identity", "To be more intimate with others"], correct: 2, exp: "Erikson's stage for adolescence is Identity vs. Role Confusion." },
+            { q: "Teacher Dennis begins a lesson on tumbling by demonstrating front and back somersaults in slow motion and physically guiding his students through the correct movements. As his students become more skillful, he stands back from the mat and gives verbal feedback about how to improve. With Vygotsky’s theory in mind, what did teacher Dennis do?", options: ["Scaffolding", "Apprenticeship", "Peer interaction", "Guided participation"], correct: 0, exp: "Scaffolding is providing temporary support that is tailored to the learner's needs and gradually removed." },
+            { q: "Which of the following is usually considered the most important factor in a child’s observable classroom behavior?", options: ["self-concept", "heredity", "intelligence", "cultural background"], correct: 1, exp: "Heredity provides the genetic foundations that influence biological and behavioral traits." },
+            { q: "Based on Bandura’s social learning theory, whom do children often imitate. Those who ______.\nI. have substantial influence over their lives\nII. belong to their peer group\nIII. belong to other races\nIV. are successful and seem admired", options: ["IV only", "II and IV", "I and IV", "I and II"], correct: 2, exp: "Bandura's theory emphasizes that children are most likely to imitate models who are influential (I) and admired/successful (IV)." },
+            { q: "Which type of motivation is characterized by a student performing a task because of an internal desire to learn or a genuine interest in the subject matter?", options: ["Extrinsic motivation", "Intrinsic motivation", "External regulation", "Social motivation"], correct: 1, exp: "Intrinsic motivation comes from within; pleasure/interest." },
+            { q: "A teacher provides a variety of learning activities such as role-playing, drawing, and logical puzzles to cater to the different strengths of her students. Whose theory is she applying?", options: ["Jean Piaget", "Howard Gardner", "Edward Thorndike", "Robert Gagne"], correct: 1, exp: "Gardner’s Multiple Intelligences theory." },
+            { q: "According to David Ausubel, what is the best way to help students link new information to their existing knowledge?", options: ["Rote memorization", "Use of advance organizers", "Frequent drills", "Punishment for wrong answers"], correct: 1, exp: "Advance organizers bridge current knowledge to new topics." },
+            { q: "When a student is aware of their own learning process and can choose the best strategy to solve a difficult problem, they are demonstrating:", options: ["Self-efficacy", "Assimilation", "Metacognition", "Conditioning"], correct: 2, exp: "Metacognition is 'thinking about thinking.'" },
+            { q: "In Maslow’s Hierarchy of Needs, which level must be satisfied before a student can truly focus on 'Self-Actualization'?", options: ["Esteem needs", "Lower-level needs (Physiological and Safety)", "Social needs", "Cognitive needs"], correct: 1, exp: "Basic survival needs must be met first." },
+            { q: "A student learned to play the piano as a child. When they later started learning the organ, they found it very easy because the keyboard layout was similar. This is an example of:", options: ["Negative transfer", "Positive transfer", "Zero transfer", "Retroactive interference"], correct: 1, exp: "Previous learning helps new learning." },
+            { q: "Which law of Thorndike states that a connection between a stimulus and response is strengthened when the consequence is positive?", options: ["Law of Exercise", "Law of Readiness", "Law of Effect", "Law of Primacy"], correct: 2, exp: "Behaviors followed by satisfaction are repeated." },
+            { q: "According to Kohlberg, a child who obeys school rules simply to avoid being punished is at what level of moral development?", options: ["Pre-conventional", "Conventional", "Post-conventional", "Universal ethical"], correct: 0, exp: "Morality is based on consequences." },
+            { q: "What is the main focus of 'Discovery Learning' as proposed by Jerome Bruner?", options: ["Direct instruction from the teacher", "Students interacting with their environment to derive principles", "Memorizing dates and facts", "Learning through repetitive lectures"], correct: 1, exp: "Active discovery over passive reception." },
+            { q: "Which memory system has a capacity of '7 plus or minus 2' chunks and lasts for only about 20-30 seconds?", options: ["Sensory Memory", "Long-term Memory", "Short-term/Working Memory", "Procedural Memory"], correct: 2, exp: "This describes the limits of working memory." },
+            { q: "In the Information Processing Theory, what is the process of converting information into a form that can be stored in the brain?", options: ["Retrieval", "Encoding", "Storage", "Decoding"], correct: 1, exp: "Encoding is the initial learning of information." },
+            { q: "A student who believes that their intelligence can be developed through hard work and persistence has a:", options: ["Fixed mindset", "Growth mindset", "Closed mindset", "Static mindset"], correct: 1, exp: "Dweck’s Growth Mindset." },
+            { q: "Which of the following describes 'Transfer of Learning'?", options: ["The ability to pass an exam", "Applying knowledge from one context to another", "Memorizing a textbook word-for-word", "Listening to a teacher’s lecture"], correct: 1, exp: "Transfer is using what was learned in one situation in a new one." },
+            { q: "What is the psychological term for the 'Aha!' moment when a learner suddenly realizes the solution to a problem?", options: ["Latent learning", "Insight learning", "Trial and error", "Operant learning"], correct: 1, exp: "Wolfgang Kohler’s concept of sudden realization." },
+            { q: "Which instructional strategy involves grouping students with diverse abilities to work together toward a common goal?", options: ["Competitive learning", "Individualized instruction", "Cooperative learning", "Direct instruction"], correct: 2, exp: "Cooperative learning fosters teamwork and shared goals." },
+            { q: "According to the 'Self-Determination Theory,' which three basic needs drive human motivation?", options: ["Power, Achievement, Affiliation", "Autonomy, Competence, Relatedness", "Food, Shelter, Love", "Grades, Rewards, Recognition"], correct: 1, exp: "These three needs support psychological growth." },
+            { q: "A teacher uses 'Tokens' or 'Points' that can be exchanged for prizes to encourage good behavior. This is an application of:", options: ["Classical Conditioning", "Operant Conditioning", "Gestalt Psychology", "Humanism"], correct: 1, exp: "Based on reinforcement (Token Economy)." },
+            { q: "What is 'Self-Regulation' in learner-centered teaching?", options: ["The teacher controlling the students", "The process of monitoring and managing one's own learning", "Strict adherence to school rules", "Automatic responses to stimuli"], correct: 1, exp: "Learners take control of their own learning process." },
+            { q: "In Gagne’s Nine Events of Instruction, what is the purpose of 'Stimulating Recall of Prior Learning'?", options: ["To test the students", "To gain attention", "To help students retrieve relevant information from long-term memory", "To provide feedback"], correct: 2, exp: "Bridges previous knowledge to new information." },
+            { q: "Which pillar of learning by Jacques Delors emphasizes the development of skills to deal with many situations and work in teams?", options: ["Learning to know", "Learning to do", "Learning to live together", "Learning to be"], correct: 1, exp: "Focuses on vocational skills and competence." },
+            { q: "A child calls every four-legged animal 'dog' after learning what a dog is. This is an example of:", options: ["Accommodation", "Assimilation", "Conservation", "Object Permanence"], correct: 1, exp: "Fitting new info into an existing schema." },
+            { q: "If a teacher wants to foster 'Creative Thinking,' they should encourage students to engage in:", options: ["Convergent thinking", "Divergent thinking", "Linear thinking", "Rote memorization"], correct: 1, exp: "Generating multiple unique solutions." },
+            { q: "What is 'Learner-Centered Teaching' primarily focused on?", options: ["Covering all the topics in the syllabus", "The individual needs and characteristics of the learner", "The teacher’s performance", "Standardized test scores"], correct: 1, exp: "Instruction is tailored to the learner." },
+            { q: "In Information Processing, what is 'Proactive Interference'?", options: ["New information interferes with old information", "Old information interferes with new information", "Emotional trauma affecting memory", "Lack of focus during encoding"], correct: 1, exp: "Previously learned material hinders new learning." },
+            { q: "Which of the following is an example of a 'Cognitive' learning strategy?", options: ["Rewarding oneself with a snack", "Creating a concept map of the lesson", "Staying late at school", "Taking deep breaths to relax"], correct: 1, exp: "A mental tool for organization and understanding." },
+            { q: "According to the Attribution Theory, a student who blames 'bad luck' for a failing grade is using a factor that is:", options: ["Internal-stable", "External-unstable", "Internal-unstable", "External-stable"], correct: 1, exp: "Luck is outside the person and changes." },
+            { q: "Which term refers to the 'meaningful' association between a new concept and an old concept?", options: ["Meaningful Learning", "Mechanical Learning", "Discovery Learning", "Rote Learning"], correct: 0, exp: "Ausubel’s theory of anchoring new ideas." },
+            { q: "A learner who prefers to see diagrams, maps, and written instructions is likely a/an:", options: ["Auditory learner", "Visual learner", "Kinesthetic learner", "Global learner"], correct: 1, exp: "Visual learners process info best through sight." },
+            { q: "What is the effect of 'High Self-Efficacy' on a student's learning?", options: ["They give up easily", "They set higher goals and persist longer", "They become arrogant", "They stop studying"], correct: 1, exp: "Belief in one's ability increases effort." },
+            { q: "Which theory explains that children learn by observing the consequences of other people's actions?", options: ["Classical Conditioning", "Vicarious Learning", "Trial and Error", "Cognitive Constructivism"], correct: 1, exp: "Part of Bandura’s Social Learning Theory." },
+            { q: " 'Spiral Progression' in the curriculum is based on whose learning theory?", options: ["Jean Piaget", "Jerome Bruner", "Lev Vygotsky", "Erik Erikson"], correct: 1, exp: "Bruner proposed revisiting topics with increasing complexity." },
+            { q: "In Bloom’s Revised Taxonomy, what is the highest level of cognitive processing?", options: ["Evaluating", "Synthesizing", "Creating", "Analyzing"], correct: 2, exp: "Creating involves putting elements together to form a whole." },
+            { q: "A teacher emphasizes 'Self-Directed Learning' where students choose their own topics and work at their own pace. This is a/an _______ approach.", options: ["Essentialist", "Behaviorist", "Humanistic", "Perennialist"], correct: 2, exp: "Focuses on self-actualization and freedom." },
+            { q: "Which of the following is a characteristic of 'Metacognitive Learners'?", options: ["They never make mistakes", "They monitor their understanding while reading", "They always finish first", "They memorize everything"], correct: 1, exp: "Self-awareness of the learning process." },
+            { q: "What is the ultimate goal of 'Facilitating Learner-Centered Teaching'?", options: ["High grades for everyone", "Development of independent and lifelong learners", "Quiet and orderly classrooms", "Following the teacher’s instructions perfectly"], correct: 1, exp: "Empowering students for long-term growth." }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 60;
+
+        // Audio helper (copied from script-firebase-fixed.js for standalone quiz pages)
+        function playAudio(id) {
+            try {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.currentTime = 0;
+                const p = el.play();
+                if (p && p.catch) p.catch(() => {});
+            } catch (e) {}
+        }
+        function startQuiz() {
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById('quizProgress').innerText = `${currentIdx + 1} / ${questions.length}`;
+            document.getElementById('questionText').innerText = q.q;
+            
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = `${String.fromCharCode(65 + index)}. ${opt}`;
+                btn.onclick = () => selectOption(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('explanationBox').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timeLeft = 60;
+            document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    selectOption(-1); 
+                }
+            }, 1000);
+        }
+
+        function selectOption(index) {
+            clearInterval(timer);
+            const q = questions[currentIdx];
+            const options = document.querySelectorAll('.option-btn');
+            
+            options.forEach(btn => btn.disabled = true);
+            
+            if (index === q.correct) {
+                options[index].classList.add('correct');
+                score++;
+                document.getElementById('feedbackTitle').innerText = "Correct!"; // Changed from "Correct!"
+                document.getElementById('feedbackTitle').style.color = "var(--success)"; // Changed from "#4CAF50"
+                playAudio('sound-correct');
+            } else {
+                if (index !== -1) options[index].classList.add('wrong');
+                options[q.correct].classList.add('correct');
+                document.getElementById('feedbackTitle').innerText = "Incorrect"; // Changed from "Incorrect"
+                document.getElementById('feedbackTitle').style.color = "var(--danger)"; // Changed from "#f44336"
+                playAudio('sound-wrong');
+            }
+            
+            document.getElementById('explanationText').innerText = q.exp;
+            document.getElementById('explanationBox').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentIdx++;
+            if (currentIdx < questions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quizPage').style.display = 'none';
+            document.getElementById('quizResultPage').classList.add('active');
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('maxScore').innerText = questions.length;
+
+            const percentage = (score / questions.length) * 100;
+            const feedback = document.getElementById('resultFeedback');
+
+            if (percentage === 100) {
+                feedback.innerText = "Perfect Score! You're a Master Teacher!";
+            } else if (percentage >= 80) {
+                feedback.innerText = "Excellent performance! Keep it up.";
+            } else if (percentage >= 50) {
+                feedback.innerText = "Good job! Review the explanations to improve.";
+            } else {
+                feedback.innerText = "Keep practicing! You'll get better.";
+            }
+            const finishAudio = document.getElementById('sound-finish'); if (finishAudio) { finishAudio.currentTime = 0; finishAudio.play().catch(()=>{}); }
+            saveResultToFirestore('Facilitating Learner-Centered Teaching', score, questions.length);
+        }
+
+        startQuiz();
+    </script>
+</body>
+</html>

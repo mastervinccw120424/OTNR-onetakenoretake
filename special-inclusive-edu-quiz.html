@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashReview - Special & Inclusive Education</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Sound effects -->
+    <audio id="sound-correct" src="correct.mp3" preload="auto"></audio>
+    <audio id="sound-wrong" src="wrong.mp3" preload="auto"></audio>
+    <audio id="sound-notification" src="notification.mp3" preload="auto"></audio>
+    <audio id="sound-finish" src="finish.mp3" preload="auto"></audio>
+
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script defer src="firebase-config.js"></script>
+    <script defer src="quiz-save-helper.js"></script>
+</head>
+<body>
+    <!-- Quiz Page -->
+    <div id="quizPage" class="page active" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="dashboard-header" style="width: 100%; max-width: 800px; margin-bottom: 20px;">
+            <button class="btn-back" onclick="window.location.href='index.html'">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 style="font-size: 1.2rem; color: var(--text-muted);">Special & Inclusive Education</h2>
+            <div class="quiz-timer" id="quizTimer">60s</div>
+            <div id="quizProgress" style="font-weight: 700; background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 15px;">1 / 50</div>
+        </div>
+
+        <div class="quiz-container">
+            <div class="quiz-question-box">
+                <h3 id="questionText">Loading question...</h3>
+            </div>
+
+            <div class="quiz-options" id="quizOptions">
+                <!-- Options inserted here -->
+            </div>
+
+            <div id="explanationBox" class="explanation-box" style="display: none;">
+                <strong id="feedbackTitle">Correct!</strong>
+                <p id="explanationText">Explanation goes here...</p>
+            </div>
+
+            <button id="nextBtn" class="btn-submit" style="display: none; margin-top: 10px;" onclick="nextQuestion()">
+                Next Question <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quiz Result Page -->
+    <div id="quizResultPage" class="page" style="display: flex; align-items: center; justify-content: center;">
+        <div class="result-container text-center">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <h2 id="resultTitle">FlashReview Completed!</h2>
+            <p class="result-score">Your Score: <span id="finalScore">0</span> / <span id="maxScore">50</span></p>
+            <div id="resultFeedback" class="mb-20">Great job! Keep reviewing.</div>
+            
+            <div class="topic-actions">
+                <button class="btn-action" onclick="window.location.href='index.html'">
+                    <i class="fas fa-home"></i> Home
+                </button>
+                <button class="btn-action secondary" onclick="location.reload()">
+                    <i class="fas fa-redo"></i> Restart FlashReview
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "Which legal mandate in the Philippines is known as the \"Magna Carta for Disabled Persons\"?", options: ["Republic Act 9155", "Republic Act 7277", "Republic Act 10533", "Republic Act 7836"], correct: 1, exp: "RA 7277 is the Magna Carta for Disabled Persons, providing for their rehabilitation, self-development, and self-reliance." },
+            { q: "A student is placed in a regular classroom for physical education and music but stays in a SPED room for core subjects. This arrangement is called:", options: ["Full Inclusion", "Segregation", "Mainstreaming", "Homeschooling"], correct: 2, exp: "Mainstreaming involves placing students with disabilities in regular classes for specific periods based on their skills." },
+            { q: "If a teacher provides a student with a braille version of a textbook, what is being implemented?", options: ["Modification", "Remediation", "Accommodation", "Acceleration"], correct: 2, exp: "Accommodation changes how a student learns or accesses information without changing the actual curriculum content." },
+            { q: "Dyscalculia is a learning disability specifically associated with difficulty in:", options: ["Reading and decoding", "Handwriting and fine motor skills", "Mathematical operations and number sense", "Spelling and grammar"], correct: 2, exp: "Dyscalculia specifically affects a person's ability to understand numbers and learn math facts." },
+            { q: "What is the document that serves as a roadmap for a student with special needs, containing goals and services?", options: ["Lesson Plan", "Table of Specifications", "Individualized Education Program (IEP)", "Cumulative Record"], correct: 2, exp: "The IEP is a legally binding document that outlines a student's educational goals and the services they will receive." },
+            { q: "Which principle states that students with disabilities should be educated with their non-disabled peers to the greatest extent possible?", options: ["Most Restrictive Environment", "Least Restrictive Environment (LRE)", "Normalization", "Individualization"], correct: 1, exp: "LRE ensures that students with disabilities are educated in the most integrated setting appropriate for their needs." },
+            { q: "Universal Design for Learning (UDL) focuses on:", options: ["Creating a separate curriculum for slow learners.", "Standardizing tests for all students.", "Providing multiple means of representation, expression, and engagement.", "Using only digital tools in the classroom."], correct: 2, exp: "UDL is a framework to improve and optimize teaching and learning for all people based on scientific insights into how humans learn." },
+            { q: "Which condition is characterized by persistent challenges in social communication and restricted, repetitive patterns of behavior?", options: ["ADHD", "Down Syndrome", "Autism Spectrum Disorder (ASD)", "Cerebral Palsy"], correct: 2, exp: "ASD is a developmental disability that can cause significant social, communication, and behavioral challenges." },
+            { q: "In the context of SPED, \"Comorbidity\" refers to:", options: ["The severity of a disability.", "The presence of two or more conditions in one individual.", "The recovery from a learning disability.", "The genetic cause of a condition."], correct: 1, exp: "Comorbidity is the simultaneous presence of two or more chronic diseases or conditions in a patient." },
+            { q: "Which model views disability as a \"problem\" or \"defect\" within the individual that needs to be \"cured\"?", options: ["Social Model", "Moral Model", "Medical Model", "Rights-based Model"], correct: 2, exp: "The Medical Model focuses on the impairment or the 'deficit' of the individual rather than societal barriers." },
+            { q: "A teacher who uses a \"Peer Tutoring\" strategy in an inclusive classroom is primarily promoting:", options: ["Academic competition", "Social interaction and collaborative learning", "Teacher-centered instruction", "Student isolation"], correct: 1, exp: "Peer tutoring fosters a supportive environment where students learn from each other, enhancing both social and academic growth." },
+            { q: "Intellectual Disability (ID) is generally characterized by an IQ score below:", options: ["100", "90", "70", "50"], correct: 2, exp: "An IQ score of approximately 70 or below is typically used as one of the criteria for identifying Intellectual Disability." },
+            { q: "Which of the following is an example of a \"Low-Incidence\" disability?", options: ["Learning Disabilities", "Deaf-Blindness", "Speech Impairment", "ADHD"], correct: 1, exp: "Low-incidence disabilities, like deaf-blindness, occur in a small percentage of the population compared to high-incidence disabilities like LD or ADHD." },
+            { q: "What is \"Child-Find\" in the Philippine education system?", options: ["Searching for missing children.", "A system to identify and evaluate children who may need SPED services.", "A database for honor students.", "A program for child laborers only."], correct: 1, exp: "Child-Find is the process used by schools to identify, locate, and evaluate all children with disabilities who may need special education." },
+            { q: "If a teacher reduces the number of questions on a test or changes the level of difficulty for a specific student, they are using:", options: ["Accommodation", "Modification", "Inclusion", "Integration"], correct: 1, exp: "Modification involves changing the actual content or standard of what a student is expected to learn." },
+            { q: "Which of the following is the primary difference between 'Inclusion' and 'Mainstreaming'?", options: ["Inclusion is only for physical disabilities while mainstreaming is for cognitive ones.", "Mainstreaming requires the child to show they can keep up, while Inclusion assumes the child belongs and adapts the environment.", "Mainstreaming is more modern and preferred by DepEd than Inclusion.", "There is no technical difference between the two terms."], correct: 1, exp: "Mainstreaming is often viewed as a 'trial' for the student, whereas Inclusion is a philosophy that schools should change to accommodate all learners." },
+            { q: "A student who has difficulty sitting still, constantly fidgets, and has a short attention span likely exhibits characteristics of:", options: ["Autism Spectrum Disorder (ASD)", "Attention Deficit Hyperactivity Disorder (ADHD)", "Down Syndrome", "Oppositional Defiant Disorder (ODD)"], correct: 1, exp: "ADHD is a neurodevelopmental disorder characterized by inattention, hyperactivity, and impulsivity." },
+            { q: "Which condition is caused by an extra copy of Chromosome 21?", options: ["Turner Syndrome", "Down Syndrome", "Klinefelter Syndrome", "Fragile X Syndrome"], correct: 1, exp: "Down Syndrome, also known as Trisomy 21, is a genetic disorder caused by the presence of all or part of a third copy of chromosome 21." },
+            { q: "Which term refers to the ability of a person with a disability to live and work in the community with the same rights and choices as others?", options: ["Segregation", "Normalization", "Isolation", "Institutionalization"], correct: 1, exp: "Normalization is the principle of making available to PWDs patterns of life and conditions of everyday living which are as close as possible to the regular circumstances of society." },
+            { q: "In Inclusive Education, what is 'Co-teaching'?", options: ["Two students teaching each other in a group.", "A general education teacher and a SPED teacher working together in one classroom.", "A teacher having two different subjects in one day.", "Parents teaching their children at home after school."], correct: 1, exp: "Co-teaching is a service delivery model where two professionals share instructional responsibility for a single group of students." },
+            { q: "Which type of hearing loss occurs when there is a problem with the outer or middle ear, preventing sound from reaching the inner ear?", options: ["Sensorineural hearing loss", "Conductive hearing loss", "Central hearing loss", "Mixed hearing loss"], correct: 1, exp: "Conductive hearing loss involves a 'blockage' in the outer or middle ear, often treatable medically or surgically." },
+            { q: "This refers to a condition characterized by significant limitations in both intellectual functioning and adaptive behavior.", options: ["Learning Disability", "Intellectual Disability", "Emotional Disturbance", "Speech Impairment"], correct: 1, exp: "Intellectual Disability involves a low IQ (below 70) and difficulty with everyday social and practical skills." },
+            { q: "What is 'Braille'?", options: ["A sign language for the deaf community.", "A system of raised dots used by people with visual impairments to read and write.", "A special computer software for kids with dyslexia.", "A type of hearing aid used for profound deafness."], correct: 1, exp: "Braille allows people who are blind to read through touch." },
+            { q: "Which instructional strategy involves breaking down a complex task into smaller, manageable steps?", options: ["Scaffolding", "Task Analysis", "Peer Tutoring", "Discovery Learning"], correct: 1, exp: "Task Analysis is essential in SPED for teaching functional skills like tying shoes or solving multi-step math problems." },
+            { q: "A student with 'Dysgraphia' would struggle most with:", options: ["Reading a map or chart.", "Understanding spoken instructions.", "Handwriting and organizing thoughts on paper.", "Solving complex long division."], correct: 2, exp: "Dysgraphia is a specific learning disability that affects writing abilities, including spelling and handwriting." },
+            { q: " 'People First Language' means:", options: ["Putting the disability before the person (e.g., 'The Autistic boy').", "Putting the person before the disability (e.g., 'The boy with Autism').", "Not talking about the disability at all.", "Using slang terms to make the child feel comfortable."], correct: 1, exp: "People First Language emphasizes the individual's humanity rather than their diagnosis." },
+            { q: "What is 'Echolalia'?", options: ["A fear of loud noises.", "The repetition of words or phrases spoken by others, often seen in ASD.", "A type of singing voice used in therapy.", "Difficulty in swallowing food."], correct: 1, exp: "Echolalia can be immediate or delayed and is a common communication characteristic in some children with Autism." },
+            { q: "Which of the following is an example of an 'Augmentative and Alternative Communication' (AAC) tool?", options: ["A standard No. 2 pencil.", "A picture board used by a non-verbal student to express needs.", "A classroom blackboard.", "A regular school bus."], correct: 1, exp: "AAC includes all forms of communication (other than oral speech) that are used to express thoughts, needs, and ideas." },
+            { q: "Which category of special needs includes Autism, EBD, and Specific Learning Disabilities?", options: ["Intellectual Disability", "Emotional and Behavioral Disorders (EBD)", "Specific Learning Disabilities", "Communication Disorders"], correct: 1, exp: "EBD refers to a condition exhibiting emotional characteristics that adversely affect performance." },
+            { q: "What is 'Transition Education'?", options: ["Moving from Grade 1 to Grade 2.", "Preparing students with disabilities for life after high school (employment, living).", "Changing from a private school to a public school.", "The time spent during recess or lunch breaks."], correct: 1, exp: "Transition services help students move to post-school activities like vocational training." },
+            { q: "A teacher uses a 'Stress Ball' to help a student with ADHD focus. This is a form of:", options: ["Punishment for fidgeting.", "Sensory Integration or Support.", "Distraction from the lesson.", "Reward for finishing work early."], correct: 1, exp: "Fidget tools provide sensory input to help regulate focus." },
+            { q: "Which type of sign language is officially recognized as the medium of instruction for the deaf in the Philippines?", options: ["American Sign Language (ASL)", "Filipino Sign Language (FSL)", "British Sign Language (BSL)", "Signing Exact English (SEE)"], correct: 1, exp: "RA 11106 declares FSL as the national sign language of the Filipino deaf." },
+            { q: "What is the 'Zero Reject' principle in Special Education?", options: ["No teacher can be rejected by a principal.", "No child with a disability can be excluded from a free, appropriate public education.", "Students cannot reject the homework given to them.", "Schools only accept students with high IQ scores."], correct: 1, exp: "This principle ensures all children have a right to education regardless of disability severity." },
+            { q: "A student who has 'Stuttering' or 'Cluttering' problems has a:", options: ["Voice disorder", "Fluency disorder", "Articulation disorder", "Language disorder"], correct: 1, exp: "Fluency disorders affect the flow, speed, and rhythm of speech." },
+            { q: "Which tier of the 'Response to Intervention' (RTI) model involves the most intensive, individualized support?", options: ["Tier 1 (Universal)", "Tier 2 (Targeted)", "Tier 3 (Intensive)", "Tier 4 (Specialized)"], correct: 2, exp: "Tier 3 is for students needing one-on-one specialized instruction." },
+            { q: " 'Adaptive Behavior' refers to:", options: ["How well a student does in a Math competition.", "Everyday social and practical skills needed to function in daily life.", "Being able to change clothes quickly during PE.", "Obeying every single command of the teacher without question."], correct: 1, exp: "Adaptive behavior is key in diagnosing Intellectual Disabilities." },
+            { q: "What is 'Hyperlexia'?", options: ["An inability to read despite high IQ.", "An advanced ability to read words at a very young age, often without full comprehension.", "Difficulty in writing letters in the correct order.", "A phobia of libraries and books."], correct: 1, exp: "Hyperlexia is often associated with the Autism Spectrum." },
+            { q: "Which of the following is a 'Physical or Orthopedic' impairment?", options: ["Dyslexia", "Cerebral Palsy", "Anxiety Disorder", "Giftedness"], correct: 1, exp: "Cerebral Palsy affects muscle tone, movement, and motor skills." },
+            { q: "In the Philippines, 'SPED' historically stands for:", options: ["Special Professional Educational Development", "Special Education", "Speed Education for Fast Learners", "Specific Program for Every Disabled student"], correct: 1, exp: "SPED remains the common term for specialized instruction in the Philippines." },
+            { q: "What is the primary purpose of a 'Screening' test?", options: ["To give a final grade for the semester.", "To identify children who may need further, more formal evaluation.", "To expel students who are failing.", "To determine if a student should be an honor student."], correct: 1, exp: "Screening is a quick way to identify children at risk for a disability." },
+            { q: "A student with Myopia has difficulty seeing:", options: ["Objects that are close up.", "Objects that are far away.", "Colors like red and green.", "In the dark."], correct: 1, exp: "Myopia is the medical term for nearsightedness." },
+            { q: "Which philosophy states that the environment should be modified to fit the child, rather than the child fitting the environment?", options: ["Essentialism", "Constructivism", "Inclusive Education", "Perennialism"], correct: 2, exp: "Inclusive education focuses on removing barriers within the system." },
+            { q: "A student who can perform complex mental calculations but struggles with basic social interaction might be described as having:", options: ["Savant Syndrome", "Dyscalculia", "ADHD", "Oppositional Defiant Disorder"], correct: 0, exp: "Savant syndrome involves extraordinary abilities in specific areas despite disabilities." },
+            { q: "What is the 'Social Model' of disability?", options: ["Disability is a medical problem to be fixed.", "Disability is caused by the way society is organized and its lack of accessibility.", "Disability is a punishment for past sins.", "Disability means the person cannot be social."], correct: 1, exp: "The social model looks at systemic barriers rather than individual deficits." },
+            { q: "Which professional is trained to help students improve their fine motor skills and daily living activities?", options: ["Physical Therapist", "Occupational Therapist", "Speech-Language Pathologist", "Psychologist"], correct: 1, exp: "Occupational therapy (OT) focuses on daily functional tasks." },
+            { q: "What is 'Giftedness' in the context of SPED?", options: ["Having many talents in sports only.", "Demonstrating high performance or potential in intellectual, creative, or leadership areas.", "Being very rich and many resources.", "Passing an exam without studying."], correct: 1, exp: "Gifted learners are part of the SPED spectrum needing modified instruction." },
+            { q: "Which law mandates the establishment of an Inclusive Learning Resource Center (ILRC) in every municipality and city?", options: ["RA 11650", "RA 7836", "RA 4670", "RA 9155"], correct: 0, exp: "RA 11650 (2022) strengthens inclusion for learners with disabilities." },
+            { q: "What is the 'Hidden Curriculum' in an inclusive setting?", options: ["The secret syllabus teachers use.", "Unspoken lessons like social norms, respect, and acceptance of diversity.", "Topics that are banned by the government.", "Advanced lessons for gifted students."], correct: 1, exp: "Students learn to value diversity through daily social interaction." },
+            { q: "If a student uses a 'Hearing Aid,' the teacher should:", options: ["Shout as loud as possible.", "Face the student when speaking to allow for lip-reading.", "Ignore the student and focus on others.", "Make the student sit at the back of the room."], correct: 1, exp: "Clear communication and positioning maximize assistive tech use." },
+            { q: "The ultimate goal of Special and Inclusive Education is:", options: ["To make everyone have the same IQ.", "Full participation and empowerment of all learners in society.", "To keep disabled students separate from others.", "To make exams as easy as possible."], correct: 1, exp: "Inclusion aims for a society where everyone has equal opportunity." }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 60;
+
+        // Audio helper (copied from script-firebase-fixed.js for standalone quiz pages)
+        function playAudio(id) {
+            try {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.currentTime = 0;
+                const p = el.play();
+                if (p && p.catch) p.catch(() => {});
+            } catch (e) {}
+        }
+        function startQuiz() {
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById('quizProgress').innerText = `${currentIdx + 1} / ${questions.length}`;
+            document.getElementById('questionText').innerText = q.q;
+            
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = `${String.fromCharCode(65 + index)}. ${opt}`;
+                btn.onclick = () => selectOption(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('explanationBox').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timeLeft = 60;
+            document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    selectOption(-1); 
+                }
+            }, 1000);
+        }
+
+        function selectOption(index) {
+            clearInterval(timer);
+            const q = questions[currentIdx];
+            const options = document.querySelectorAll('.option-btn');
+            
+            options.forEach(btn => btn.disabled = true);
+            
+            if (index === q.correct) {
+                options[index].classList.add('correct');
+                score++;
+                document.getElementById('feedbackTitle').innerText = "Correct!"; // Changed from "Correct!"
+                document.getElementById('feedbackTitle').style.color = "var(--success)"; // Changed from "#4CAF50"
+                playAudio('sound-correct');
+            } else {
+                if (index !== -1) options[index].classList.add('wrong');
+                options[q.correct].classList.add('correct');
+                document.getElementById('feedbackTitle').innerText = "Incorrect"; // Changed from "Incorrect"
+                document.getElementById('feedbackTitle').style.color = "var(--danger)"; // Changed from "#f44336"
+                playAudio('sound-wrong');
+            }
+            
+            document.getElementById('explanationText').innerText = q.exp;
+            document.getElementById('explanationBox').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentIdx++;
+            if (currentIdx < questions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quizPage').style.display = 'none';
+            document.getElementById('quizResultPage').classList.add('active');
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('maxScore').innerText = questions.length;
+
+            const percentage = (score / questions.length) * 100;
+            const feedback = document.getElementById('resultFeedback');
+
+            if (percentage === 100) {
+                feedback.innerText = "Perfect Score! You're an Inclusive Education Expert!";
+            } else if (percentage >= 80) {
+                feedback.innerText = "Excellent! You have a strong grasp of SPED mandates.";
+            } else if (percentage >= 50) {
+                feedback.innerText = "Good job! Review the explanations to master the concepts.";
+            } else {
+                feedback.innerText = "Keep practicing! Inclusive Education is key.";
+            }
+            const finishAudio = document.getElementById('sound-finish'); if (finishAudio) { finishAudio.currentTime = 0; finishAudio.play().catch(()=>{}); }
+            saveResultToFirestore('Special & Inclusive Education', score, questions.length);
+        }
+
+        startQuiz();
+    </script>
+</body>
+</html>

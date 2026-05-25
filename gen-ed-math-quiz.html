@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashReview - Gen Ed Mathematics</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Sound effects -->
+    <audio id="sound-correct" src="correct.mp3" preload="auto"></audio>
+    <audio id="sound-wrong" src="wrong.mp3" preload="auto"></audio>
+    <audio id="sound-notification" src="notification.mp3" preload="auto"></audio>
+    <audio id="sound-finish" src="finish.mp3" preload="auto"></audio>
+
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script defer src="firebase-config.js"></script>
+    <script defer src="quiz-save-helper.js"></script>
+</head>
+<body>
+    <!-- Quiz Page -->
+    <div id="quizPage" class="page active" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="dashboard-header" style="width: 100%; max-width: 800px; margin-bottom: 20px;">
+            <button class="btn-back" onclick="window.location.href='index.html'">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 style="font-size: 1.2rem; color: var(--text-muted);">Gen Ed Mathematics</h2>
+            <div class="quiz-timer" id="quizTimer">60s</div>
+            <div id="quizProgress" style="font-weight: 700; background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 15px;">1 / 10</div>
+        </div>
+
+        <div class="quiz-container">
+            <div class="quiz-question-box">
+                <h3 id="questionText">Loading question...</h3>
+            </div>
+
+            <div class="quiz-options" id="quizOptions">
+                <!-- Options inserted here -->
+            </div>
+
+            <div id="explanationBox" class="explanation-box" style="display: none;">
+                <strong id="feedbackTitle">Correct!</strong>
+                <p id="explanationText">Explanation goes here...</p>
+            </div>
+
+            <button id="nextBtn" class="btn-submit" style="display: none; margin-top: 20px;" onclick="nextQuestion()">
+                Next Question <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Quiz Result Page -->
+    <div id="quizResultPage" class="page" style="display: flex; align-items: center; justify-content: center;">
+        <div class="result-container text-center">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <h2 id="resultTitle">FlashReview Completed!</h2>
+            <p class="result-score">Your Score: <span id="finalScore">0</span> / 10</p>
+            <div id="resultFeedback" class="mb-20">Great job! Keep reviewing.</div>
+            
+            <div class="topic-actions">
+                <button class="btn-action" onclick="window.location.href='index.html'">
+                    <i class="fas fa-home"></i> Home
+                </button>
+                <button class="btn-action secondary" onclick="location.reload()">
+                    <i class="fas fa-redo"></i> Restart FlashReview
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "Growing up, you lived in a tiny country village. When you left for college, the population was 745. You recently heard that the population has grown by 200%. What is the present population?", options: ["102", "1440", "2235", "945"], correct: 2, exp: "A growth of 200% means the increase is twice the original population (2 * 745 = 1490). Present population = 745 + 1490 = 2235." },
+            { q: "On a 150-question examination, a student got 110 correct answers. What percent is the student’s score with respect to the perfect score?", options: ["0.733%", "7.33%", "73.3%", "733%"], correct: 2, exp: "Percentage is calculated as (Part/Whole) * 100. So, (110 / 150) * 100 = 73.33%." },
+            { q: "Mark wants to save his P10,000 money in the bank which pays a simple interest rate of 8%. How much money will he have after 2 years?", options: ["P11,600", "P11,050", "P6,150", "P6,250"], correct: 0, exp: "Interest = P * R * T = 10,000 * 0.08 * 2 = 1,600. Total amount = Principal + Interest = 10,000 + 1,600 = 11,600." },
+            { q: "It is a figure found by two rays having a common endpoint called a vertex.", options: ["line segment", "angle", "line", "point"], correct: 1, exp: "This is the geometric definition of an angle." },
+            { q: "If a motion is applied to a point until it reaches another point, then the object so formed is called:", options: ["line segment", "angle", "line", "rays"], correct: 0, exp: "The shortest path between two specific points forms a line segment." },
+            { q: "Which of the following statements is TRUE about angles?", options: ["Some right angles measure exactly 90 degrees.", "Straight angle measures exactly 180 degrees.", "A full angle measures above 270 degrees.", "All acute angles measure above 90 degrees"], correct: 1, exp: "A straight angle is a line, which measures exactly 180 degrees." },
+            { q: "Two angles are supplementary if their measure equals 180. If angles A and B are supplementary and A=125°, what is the measure of angle B?", options: ["65 degrees", "55 degrees", "45 degrees", "75 degrees"], correct: 1, exp: "Supplementary angles sum to 180°. 180 - 125 = 55." },
+            { q: "What is the name of the triangle whose two sides are equal and one angle measures between 90° and 180°?", options: ["Scalene Right Triangle", "Isosceles Obtuse Triangle", "Scalene Obtuse Triangle", "Isosceles Right Triangle"], correct: 1, exp: "Two equal sides make it isosceles; an angle between 90 and 180 degrees is obtuse." },
+            { q: "In a triangle ABC, angle A= 65° and angle C= 60°. What is the value of angle B?", options: ["55 degrees", "–55 degrees", "60 degrees", "65 degrees"], correct: 0, exp: "The sum of interior angles in a triangle is 180°. 180 - (65 + 60) = 55." },
+            { q: "Which of the following quadrilaterals below with exactly one pair of parallel opposite sides?", options: ["Kite", "Rectangle", "Trapezoid", "Rhombus"], correct: 2, exp: "A trapezoid (specifically a non-parallelogram one) is defined by having exactly one pair of parallel sides." }
+        ];
+
+        let currentIdx = 0;
+        let score = 0;
+        let timer;
+        let timeLeft = 60;
+
+        // Audio helper (copied from script-firebase-fixed.js for standalone quiz pages)
+        function playAudio(id) {
+            try {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.currentTime = 0;
+                const p = el.play();
+                if (p && p.catch) p.catch(() => {});
+            } catch (e) {}
+        }
+        function startQuiz() {
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentIdx];
+            document.getElementById('quizProgress').innerText = `${currentIdx + 1} / ${questions.length}`;
+            document.getElementById('questionText').innerText = q.q;
+            
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = `${String.fromCharCode(65 + index)}. ${opt}`;
+                btn.onclick = () => selectOption(index);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('explanationBox').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timeLeft = 60;
+            document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('quizTimer').innerText = `${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    selectOption(-1); 
+                }
+            }, 1000);
+        }
+
+        function selectOption(index) {
+            clearInterval(timer);
+            const q = questions[currentIdx];
+            const options = document.querySelectorAll('.option-btn');
+            
+            options.forEach(btn => btn.disabled = true);
+            
+            if (index === q.correct) {
+                options[index].classList.add('correct');
+                score++;
+                document.getElementById('feedbackTitle').innerText = "Correct!"; // Changed from "Correct!"
+                document.getElementById('feedbackTitle').style.color = "var(--success)"; // Changed from "#4CAF50"
+                playAudio('sound-correct');
+            } else {
+                if (index !== -1) options[index].classList.add('wrong');
+                options[q.correct].classList.add('correct');
+                document.getElementById('feedbackTitle').innerText = "Incorrect"; // Changed from "Incorrect"
+                document.getElementById('feedbackTitle').style.color = "var(--danger)"; // Changed from "#f44336"
+                playAudio('sound-wrong');
+            }
+            
+            document.getElementById('explanationText').innerText = q.exp;
+            document.getElementById('explanationBox').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentIdx++;
+            if (currentIdx < questions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            document.getElementById('quizPage').style.display = 'none';
+            document.getElementById('quizResultPage').classList.add('active');
+            document.getElementById('finalScore').innerText = score;
+            
+            const feedback = document.getElementById('resultFeedback');
+            if (score >= (questions.length * 0.75)) {
+                feedback.innerText = "Excellent! You have a solid grasp of basic mathematics!";
+            } else if (score >= (questions.length * 0.5)) {
+                feedback.innerText = "Good job! Review the explanations to master the formulas.";
+            } else {
+                feedback.innerText = "Keep practicing! Consistency is the key to mastering math.";
+            }
+            const finishAudio = document.getElementById('sound-finish'); if (finishAudio) { finishAudio.currentTime = 0; finishAudio.play().catch(()=>{}); }
+            saveResultToFirestore('Gen Ed Mathematics', score, questions.length);
+        }
+
+        startQuiz();
+    </script>
+</body>
+</html>
